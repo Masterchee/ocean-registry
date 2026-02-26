@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Underwater Registry 🐚</title>
+    <style>
+        /* --- AQUARIUM THEME --- */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 20px; min-height: 100vh;
+            background: linear-gradient(180deg, #0077be 0%, #003366 100%);
+            background-attachment: fixed; color: #fff; overflow-x: hidden;
+        }
+
+        .bubble {
+            position: fixed; bottom: -50px; background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%; pointer-events: none; animation: rise 10s infinite ease-in; z-index: 0;
+        }
+
+        @keyframes rise {
+            0% { bottom: -50px; transform: translateX(0); opacity: 1; }
+            100% { bottom: 110vh; transform: translateX(50px); opacity: 0; }
+        }
+
+        h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.8rem; margin-bottom: 5px; }
+        .deploy-tag { text-align: center; font-size: 0.9em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+
+        .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; gap: 10px; }
+        #search-input { 
+            flex-grow: 1; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; 
+            background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none;
+        }
+
+        .table-container {
+            position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px); border-radius: 20px; padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        table { width: 100%; border-collapse: collapse; color: #fff; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
+
+        /* Editing Styles */
+        .edit-input { 
+            width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; 
+            background: rgba(255,255,255,0.9); color: #333; 
+        }
+
+        .timestamp { font-size: 0.85em; color: #80deea; font-style: italic; }
+
+        .controls { 
+            position: relative; z-index: 2; margin-top: 30px; padding: 25px; 
+            background: rgba(0, 51, 102, 0.7); border-radius: 20px; border: 1px solid #00b8d4;
+        }
+
+        .auth-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+
+        button { 
+            padding: 10px 20px; background: #00e5ff; color: #003366; 
+            border: none; border-radius: 25px; cursor: pointer; 
+            font-weight: bold; transition: 0.3s; font-size: 0.9em;
+        }
+
+        button:hover { transform: scale(1.05); background: #f0ffff; box-shadow: 0 0 15px #00e5ff; }
+        .btn-delete { background: #ff5252; color: white; border-radius: 8px; padding: 6px 10px; }
+        .btn-edit { background: #ffa726; color: white; border-radius: 8px; padding: 6px 10px; margin-right: 5px; }
+        .btn-save { background: #00e676; color: white; border-radius: 8px; padding: 6px 10px; }
+        .btn-export { background: #ffeb3b; color: #333; }
+
+        input { 
+            width: 100%; padding: 12px; margin-top: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid #00b8d4; 
+            border-radius: 10px; color: white; outline: none; box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bubble-container"></div>
+
+    <h2>🔱 Sea Creatures table</h2>
+    <div class="deploy-tag">● System Online & Edit Mode Ready</div>
+    
+    <div class="search-container">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search the registry...">
+        <button class="btn-export" onclick="exportToCSV()">📤 Export CSV</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortData('sea_creature')">🧬 Sea Creature</th>
+                    <th onclick="sortData('scientific_name')">📖 Scientific Name</th>
+                    <th onclick="sortData('status')">📍 Status</th>
+                    <th onclick="sortData('created_at')">🕒 Recorded On</th>
+                    <th>⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody id="creature-table-body"></tbody>
+        </table>
+    </div>
+
+    <div class="controls">
+        <h3>🛠 Research Station Admin</h3>
+        
+        <div id="login-section" class="auth-box">
+            <p>Please enter credentials to unlock editing powers:</p>
+            <input type="email" id="admin-email" placeholder="Admin Email">
+            <input type="password" id="admin-password" placeholder="Password">
+            <button style="margin-top:15px;" onclick="adminSignIn()">🔑 Login to Ocean</button>
+        </div>
+
+        <div id="auth-status" style="margin-bottom:15px; font-weight:bold;">Status: 🌊 Public Viewing Mode</div>
+        
+        <hr style="margin: 25px 0; opacity: 0.2;">
+
+        <div class="input-group">
+            <label>🏷 Sea Creature Name:</label>
+            <input type="text" id="new-common-name" placeholder="e.g., Whale Shark">
+        </div>
+        <div class="input-group">
+            <label>🔬 Scientific Name:</label>
+            <input type="text" id="new-scientific-name" placeholder="e.g., Rhincodon typus">
+        </div>
+        <div class="input-group">
+            <label>📊 Status:</label>
+            <input type="text" id="new-status" placeholder="e.g., Endangered">
+        </div>
+        <br>
+        <button onclick="addNewCreature()">✨ Add Species</button>
+
+        <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
+            <h4>🚢 Bulk CSV Import</h4>
+            <input type="file" id="csv-file" accept=".csv" style="color:#fff; margin-bottom:15px;">
+            <br>
+            <button style="background: #00e676;" onclick="uploadCSV()">📥 Deploy CSV Data</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co'; 
+        const _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';             
+        const sb = window.supabase.createClient(_URL, _KEY);
+
+        let currentData = [];
+        let filteredData = []; 
+        let sortOrder = true;
+
+        function createBubbles() {
+            const container = document.getElementById('bubble-container');
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 30 + 10 + "px";
+                bubble.style.width = size; bubble.style.height = size;
+                bubble.style.left = Math.random() * 100 + "vw";
+                bubble.style.animationDelay = Math.random() * 10 + "s";
+                bubble.style.animationDuration = Math.random() * 5 + 7 + "s";
+                container.appendChild(bubble);
+            }
+        }
+        createBubbles();
+
+        function formatDate(isoString) {
+            if (!isoString) return 'Unknown';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        async function loadCreatures() {
+            const { data, error } = await sb.from('Sea Creatures').select('*');
+            if (error) return;
+            currentData = data;
+            filteredData = data;
+            renderTable(currentData);
+        }
+
+        function renderTable(dataList) {
+            const tableBody = document.getElementById('creature-table-body');
+            tableBody.innerHTML = ''; 
+            dataList.forEach(creature => {
+                tableBody.innerHTML += `<tr id="row-${creature.id}">
+                    <td class="col-name">${creature.sea_creature || 'Unknown'}</td> 
+                    <td class="col-science">${creature.scientific_name || 'N/A'}</td>
+                    <td class="col-status">${creature.status || 'N/A'}</td>
+                    <td class="timestamp">${formatDate(creature.created_at)}</td>
+                    <td id="actions-${creature.id}">
+                        <button class="btn-edit" onclick="enterEditMode(${creature.id})">✏️</button>
+                        <button class="btn-delete" onclick="deleteCreature(${creature.id}, '${creature.sea_creature}')">🗑</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        // --- EDIT MODE LOGIC ---
+        function enterEditMode(id) {
+            const row = document.getElementById(`row-${id}`);
+            const name = row.querySelector('.col-name').innerText;
+            const science = row.querySelector('.col-science').innerText;
+            const status = row.querySelector('.col-status').innerText;
+
+            row.querySelector('.col-name').innerHTML = `<input type="text" class="edit-input" id="edit-name-${id}" value="${name}">`;
+            row.querySelector('.col-science').innerHTML = `<input type="text" class="edit-input" id="edit-science-${id}" value="${science}">`;
+            row.querySelector('.col-status').innerHTML = `<input type="text" class="edit-input" id="edit-status-${id}" value="${status}">`;
+
+            document.getElementById(`actions-${id}`).innerHTML = `
+                <button class="btn-save" onclick="saveEdit(${id})">💾</button>
+                <button class="btn-delete" onclick="loadCreatures()">❌</button>
+            `;
+        }
+
+        async function saveEdit(id) {
+            const newName = document.getElementById(`edit-name-${id}`).value;
+            const newScience = document.getElementById(`edit-science-${id}`).value;
+            const newStatus = document.getElementById(`edit-status-${id}`).value;
+
+            const { error } = await sb.from('Sea Creatures').update({
+                sea_creature: newName,
+                scientific_name: newScience,
+                status: newStatus
+            }).eq('id', id);
+
+            if (error) {
+                alert("🔒 Update Blocked: Please Login as Admin.");
+                loadCreatures(); // Reset table
+            } else {
+                loadCreatures(); // Refresh data
+            }
+        }
+
+        // --- AUTH & OTHER FUNCTIONS ---
+        async function adminSignIn() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            const statusDiv = document.getElementById('auth-status');
+            if (error) { statusDiv.innerText = "❌ Denied: " + error.message; statusDiv.style.color = "#ff5252"; } 
+            else { statusDiv.innerText = "✅ Authorized: Admin Mode Active"; statusDiv.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
+        }
+
+        async function addNewCreature() {
+            const name = document.getElementById('new-common-name').value;
+            const science = document.getElementById('new-scientific-name').value;
+            const status = document.getElementById('new-status').value;
+            const { error } = await sb.from('Sea Creatures').insert([{ sea_creature: name, scientific_name: science, status: status }]);
+            if (error) alert("🔒 Admin Authentication Required."); else loadCreatures();
+        }
+
+        async function deleteCreature(id, name) {
+            if (!confirm(`⚠️ Delete ${name}?`)) return;
+            const { error } = await sb.from('Sea Creatures').delete().eq('id', id);
+            if (error) alert("🔒 Admin Authentication Required."); else loadCreatures();
+        }
+
+        function sortData(column) {
+            sortOrder = !sortOrder;
+            filteredData.sort((a, b) => {
+                let vA = a[column]?.toString().toLowerCase() || "";
+                let vB = b[column]?.toString().toLowerCase() || "";
+                return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+            });
+            renderTable(filteredData);
+        }
+
+        function filterTable() {
+            const filter = document.getElementById("search-input").value.toLowerCase();
+            filteredData = currentData.filter(item => 
+                Object.values(item).some(val => val && val.toString().toLowerCase().includes(filter))
+            );
+            renderTable(filteredData);
+        }
+
+        function exportToCSV() {
+            let csv = "Sea Creature,Scientific Name,Status,Recorded On\n";
+            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${formatDate(i.created_at)}"\n`);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'ocean_registry.csv');
+            a.click();
+        }
+
+        loadCreatures();
+    </script>
+</body>
+</html>
