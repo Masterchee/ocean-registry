@@ -26,6 +26,18 @@
         h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
         .deploy-tag { text-align: center; font-size: 0.8em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
+        /* --- CONSERVATION GLOW ALERT --- */
+        @keyframes alertPulse {
+            0% { background: rgba(255, 82, 82, 0.15); }
+            50% { background: rgba(255, 82, 82, 0.45); }
+            100% { background: rgba(255, 82, 82, 0.15); }
+        }
+
+        .alert-critical { 
+            animation: alertPulse 2s infinite ease-in-out; 
+            border-left: 6px solid #ff5252 !important; 
+        }
+
         /* Dashboard & Stats */
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
@@ -34,17 +46,9 @@
         .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
 
-        /* --- TABLE & CONSERVATION ALERTS --- */
         .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 700px; }
         
-        @keyframes alertPulse {
-            0% { background: rgba(255, 82, 82, 0.1); }
-            50% { background: rgba(255, 82, 82, 0.3); }
-            100% { background: rgba(255, 82, 82, 0.1); }
-        }
-        .alert-critical { animation: alertPulse 2s infinite ease-in-out; border-left: 5px solid #ff5252 !important; }
-
         @media screen and (max-width: 900px) {
             thead { display: none; }
             tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
@@ -79,7 +83,7 @@
 
     <div id="bubble-container"></div>
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Research Station Management V3.4</div>
+    <div class="deploy-tag">● Research Station Management V3.5</div>
 
     <div class="dashboard">
         <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea; font-style: italic;">Last Sync: Never</div>
@@ -98,7 +102,7 @@
     </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records by name, science, or source...">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records...">
         <button onclick="exportToCSV()" style="background: #ffeb3b; color: #333;">📤 Export CSV</button>
     </div>
 
@@ -139,7 +143,7 @@
         <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
 
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
-            <h4>🚢 Smart CSV Sync (Overwrite Duplicates)</h4>
+            <h4>🚢 Smart CSV Sync</h4>
             <div id="progress-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 10px; display: none; overflow: hidden;">
                 <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: 0.3s;"></div>
             </div>
@@ -212,7 +216,8 @@
             document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern|safe/)).length;
 
             list.forEach(c => {
-                const isCritical = (c.status || "").toLowerCase().includes("critically endangered");
+                const status = (c.status || "").toLowerCase();
+                const isCritical = status.includes("critically endangered");
                 const rowClass = isCritical ? 'class="alert-critical"' : '';
 
                 body.innerHTML += `<tr id="row-${c.id}" ${rowClass}>
@@ -229,7 +234,6 @@
             });
         }
 
-        // --- SMART UPSERT & SYNC ---
         async function uploadCSV() {
             const file = document.getElementById('csv-file').files[0];
             const btn = document.getElementById('csv-btn');
@@ -265,7 +269,7 @@
                     bar.style.width = "100%";
                     const now = new Date();
                     document.getElementById('sync-timestamp').innerText = `Last Sync: ${now.toLocaleTimeString()}`;
-                    alert("✅ Sync Complete! Records merged successfully.");
+                    alert("✅ Sync Complete!");
                     loadCreatures();
                 }
                 
@@ -290,7 +294,8 @@
             const row = document.getElementById(`row-${id}`);
             const fields = ['name', 'sci', 'sts', 'src'];
             fields.forEach(f => {
-                const el = row.querySelector(`.col-${f === 'src' ? 'src span' : f === 'name' ? 'name' : f === 'sci' ? 'sci' : 'sts'}`);
+                const selector = f === 'src' ? '.col-src span' : `.col-${f === 'name' ? 'name' : f === 'sci' ? 'sci' : 'sts'}`;
+                const el = row.querySelector(selector);
                 const val = el.innerText === 'N/A' ? '' : el.innerText;
                 el.innerHTML = `<input type="text" class="edit-input" value="${val}" spellcheck="false">`;
             });
@@ -318,12 +323,22 @@
             renderTable(filteredData);
         }
 
+        function sortData(col) {
+            sortOrder = !sortOrder;
+            filteredData.sort((a, b) => {
+                let vA = (a[col] || "").toString().toLowerCase();
+                let vB = (b[col] || "").toString().toLowerCase();
+                return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+            });
+            renderTable(filteredData);
+        }
+
         function exportToCSV() {
             let csv = "Creature,Scientific,Status,Source,Date\n";
             filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`);
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = 'aquarium_registry_v3.4.csv';
+            a.download = 'aquarium_registry_v3.5.csv';
             a.click();
         }
 
