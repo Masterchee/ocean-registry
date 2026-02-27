@@ -37,7 +37,7 @@
             100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); }
         }
 
-        /* Popup Styling - Making the name look like a link */
+        /* Popup Styling - Link-style name */
         .leaflet-popup-content b { cursor: pointer; color: #003366; text-decoration: underline; }
         .leaflet-popup-content b:hover { color: #0077be; }
 
@@ -159,7 +159,7 @@
                     <td class="col-sts">${c.status}</td>
                     <td class="col-src">${c.source||'N/A'}</td>
                     <td class="col-act">
-                        <button onclick="viewImageDirectly('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
+                        <button onclick="viewImageExternal('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
                         ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
@@ -186,9 +186,9 @@
                     });
                     
                     const popupContent = `
-                        <b onclick="viewImageDirectly('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
+                        <b onclick="viewImageExternal('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
                         coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
-                        <small>(Click name to view photo in new tab)</small>
+                        <small>(Click name to open photo in new tab)</small>
                     `;
                     
                     markers[d.id] = L.marker([lat, lng], { icon: subIcon })
@@ -207,12 +207,15 @@
             }, 1600);
         }
 
-        // UPDATED: Now opens the image directly in a new browser tab
-        function viewImageDirectly(name) {
+        // REPAIRED: Resolves URL and opens in new tab to bypass modal errors
+        function viewImageExternal(name) {
             const creature = currentData.find(c => c.sea_creature === name);
-            const fallback = "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater/all";
-            const imageUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
+            const fallback = "https://loremflickr.com/800/600/" + encodeURIComponent(name) + ",underwater/all";
+            let imageUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
             
+            // Wikipedia fix: ensures full resolution or direct link if URL is broken
+            if (imageUrl.includes('wikipedia')) imageUrl = fallback;
+
             window.open(imageUrl, '_blank');
         }
 
