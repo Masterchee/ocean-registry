@@ -23,57 +23,73 @@
             100% { bottom: 110vh; transform: translateX(50px); opacity: 0; }
         }
 
-        h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.8rem; margin-bottom: 5px; }
-        .deploy-tag { text-align: center; font-size: 0.9em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .deploy-tag { text-align: center; font-size: 0.8em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
-        .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; gap: 10px; }
-        #search-input { 
-            flex-grow: 1; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; 
-            background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none;
-        }
+        /* Dashboard Responsive Layout */
+        .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
+        .stat-card { flex: 1; min-width: 100px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+        .stat-val { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
 
-        .table-container {
-            position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px); border-radius: 20px; padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
+        .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
 
+        /* --- MOBILE TABLE TRANSFORMATION --- */
+        .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
         table { width: 100%; border-collapse: collapse; color: #fff; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
+        
+        @media screen and (max-width: 600px) {
+            /* Hide the table headers on mobile */
+            thead { display: none; }
+            
+            /* Make each row look like a card */
+            tr { 
+                display: block; 
+                margin-bottom: 15px; 
+                background: rgba(255,255,255,0.05); 
+                border-radius: 15px; 
+                padding: 10px; 
+                border: 1px solid rgba(0, 184, 212, 0.3);
+            }
+            
+            td { 
+                display: flex; 
+                justify-content: space-between; 
+                padding: 8px 5px; 
+                border: none; 
+                font-size: 0.9em;
+            }
 
-        /* Editing Styles */
-        .edit-input { 
-            width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; 
-            background: rgba(255,255,255,0.9); color: #333; 
+            /* Add labels before the data on mobile */
+            td::before { 
+                content: attr(data-label); 
+                font-weight: bold; 
+                color: #84ffff; 
+                text-transform: uppercase; 
+                font-size: 0.75em;
+                margin-right: 10px;
+            }
+            
+            .timestamp { font-size: 0.8em; }
+            button { width: 100%; margin-top: 5px; }
         }
 
-        .timestamp { font-size: 0.85em; color: #80deea; font-style: italic; }
-
-        .controls { 
-            position: relative; z-index: 2; margin-top: 30px; padding: 25px; 
-            background: rgba(0, 51, 102, 0.7); border-radius: 20px; border: 1px solid #00b8d4;
+        /* Desktop specific styling */
+        @media screen and (min-width: 601px) {
+            th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
+            .search-container { flex-direction: row; }
         }
 
+        .edit-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; background: rgba(255,255,255,0.9); color: #333; }
+        .controls { position: relative; z-index: 2; margin-top: 30px; padding: 25px; background: rgba(0, 51, 102, 0.7); border-radius: 20px; border: 1px solid #00b8d4; }
         .auth-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-
-        button { 
-            padding: 10px 20px; background: #00e5ff; color: #003366; 
-            border: none; border-radius: 25px; cursor: pointer; 
-            font-weight: bold; transition: 0.3s; font-size: 0.9em;
-        }
-
-        button:hover { transform: scale(1.05); background: #f0ffff; box-shadow: 0 0 15px #00e5ff; }
-        .btn-delete { background: #ff5252; color: white; border-radius: 8px; padding: 6px 10px; }
-        .btn-edit { background: #ffa726; color: white; border-radius: 8px; padding: 6px 10px; margin-right: 5px; }
-        .btn-save { background: #00e676; color: white; border-radius: 8px; padding: 6px 10px; }
+        button { padding: 10px 20px; background: #00e5ff; color: #003366; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-delete { background: #ff5252; color: white; }
+        .btn-edit { background: #ffa726; color: white; }
+        .btn-save { background: #00e676; color: white; }
         .btn-export { background: #ffeb3b; color: #333; }
-
-        input { 
-            width: 100%; padding: 12px; margin-top: 8px;
-            background: rgba(255,255,255,0.05); border: 1px solid #00b8d4; 
-            border-radius: 10px; color: white; outline: none; box-sizing: border-box;
-        }
+        input { width: 100%; padding: 12px; margin-top: 8px; background: rgba(255,255,255,0.05); border: 1px solid #00b8d4; border-radius: 10px; color: white; outline: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -81,10 +97,25 @@
     <div id="bubble-container"></div>
 
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● System Online & Edit Mode Ready</div>
+    <div class="deploy-tag">● Live Research Registry Online</div>
+
+    <div class="dashboard">
+        <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
+            <div style="font-size: 0.7em; letter-spacing: 1px;">TOTAL SPECIES</div>
+            <div id="stat-total" class="stat-val">0</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255, 82, 82, 0.2);">
+            <div style="font-size: 0.7em; letter-spacing: 1px;">ENDANGERED</div>
+            <div id="stat-endangered" class="stat-val">0</div>
+        </div>
+        <div class="stat-card" style="background: rgba(0, 230, 118, 0.2);">
+            <div style="font-size: 0.7em; letter-spacing: 1px;">STABLE</div>
+            <div id="stat-stable" class="stat-val">0</div>
+        </div>
+    </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search the registry...">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search species...">
         <button class="btn-export" onclick="exportToCSV()">📤 Export CSV</button>
     </div>
 
@@ -92,10 +123,10 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortData('sea_creature')">🧬 Sea Creature</th>
-                    <th onclick="sortData('scientific_name')">📖 Scientific Name</th>
-                    <th onclick="sortData('status')">📍 Status</th>
-                    <th onclick="sortData('created_at')">🕒 Recorded On</th>
+                    <th onclick="sortData('sea_creature')">🧬 Sea Creature ↕️</th>
+                    <th onclick="sortData('scientific_name')">📖 Scientific Name ↕️</th>
+                    <th onclick="sortData('status')">📍 Status ↕️</th>
+                    <th onclick="sortData('created_at')">🕒 Recorded On ↕️</th>
                     <th>⚙️ Actions</th>
                 </tr>
             </thead>
@@ -104,39 +135,28 @@
     </div>
 
     <div class="controls">
-        <h3>🛠 Research Station Admin</h3>
-        
+        <h3>🛠 Admin Research Station</h3>
         <div id="login-section" class="auth-box">
-            <p>Please enter credentials to unlock editing powers:</p>
-            <input type="email" id="admin-email" placeholder="Admin Email">
+            <input type="email" id="admin-email" placeholder="Email">
             <input type="password" id="admin-password" placeholder="Password">
-            <button style="margin-top:15px;" onclick="adminSignIn()">🔑 Login to Ocean</button>
+            <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Login</button>
         </div>
-
-        <div id="auth-status" style="margin-bottom:15px; font-weight:bold;">Status: 🌊 Public Viewing Mode</div>
-        
-        <hr style="margin: 25px 0; opacity: 0.2;">
-
+        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em;">Status: 🌊 Viewing Mode</div>
+        <hr style="margin: 20px 0; opacity: 0.2;">
         <div class="input-group">
-            <label>🏷 Sea Creature Name:</label>
-            <input type="text" id="new-common-name" placeholder="e.g., Whale Shark">
+            <label>🏷 Name:</label><input type="text" id="new-common-name">
+            <label>🔬 Scientific:</label><input type="text" id="new-scientific-name">
+            <label>📊 Status:</label><input type="text" id="new-status">
         </div>
-        <div class="input-group">
-            <label>🔬 Scientific Name:</label>
-            <input type="text" id="new-scientific-name" placeholder="e.g., Rhincodon typus">
-        </div>
-        <div class="input-group">
-            <label>📊 Status:</label>
-            <input type="text" id="new-status" placeholder="e.g., Endangered">
-        </div>
-        <br>
-        <button onclick="addNewCreature()">✨ Add Species</button>
-
+        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
             <h4>🚢 Bulk CSV Import</h4>
-            <input type="file" id="csv-file" accept=".csv" style="color:#fff; margin-bottom:15px;">
-            <br>
-            <button style="background: #00e676;" onclick="uploadCSV()">📥 Deploy CSV Data</button>
+            <p id="progress-text" style="font-size: 0.8em; color: #84ffff; display: none;"></p>
+            <div id="progress-container" style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 15px; display: none; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
+            </div>
+            <input type="file" id="csv-file" accept=".csv" style="color:#fff; margin-bottom:15px; font-size: 0.8em;"><br>
+            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Deploy CSV</button>
         </div>
     </div>
 
@@ -145,18 +165,15 @@
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co'; 
         const _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';             
         const sb = window.supabase.createClient(_URL, _KEY);
-
-        let currentData = [];
-        let filteredData = []; 
-        let sortOrder = true;
+        let currentData = [], filteredData = [], sortOrder = true;
 
         function createBubbles() {
             const container = document.getElementById('bubble-container');
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 10; i++) {
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
-                const size = Math.random() * 30 + 10 + "px";
-                bubble.style.width = size; bubble.style.height = size;
+                const size = Math.random() * 20 + 10 + "px";
+                bubble.style.width = bubble.style.height = size;
                 bubble.style.left = Math.random() * 100 + "vw";
                 bubble.style.animationDelay = Math.random() * 10 + "s";
                 bubble.style.animationDuration = Math.random() * 5 + 7 + "s";
@@ -165,125 +182,100 @@
         }
         createBubbles();
 
-        function formatDate(isoString) {
-            if (!isoString) return 'Unknown';
-            const date = new Date(isoString);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        }
+        function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'; }
 
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (error) return;
-            currentData = data;
-            filteredData = data;
-            renderTable(currentData);
+            if (!error) { currentData = filteredData = data; renderTable(currentData); }
         }
 
-        function renderTable(dataList) {
-            const tableBody = document.getElementById('creature-table-body');
-            tableBody.innerHTML = ''; 
-            dataList.forEach(creature => {
-                tableBody.innerHTML += `<tr id="row-${creature.id}">
-                    <td class="col-name">${creature.sea_creature || 'Unknown'}</td> 
-                    <td class="col-science">${creature.scientific_name || 'N/A'}</td>
-                    <td class="col-status">${creature.status || 'N/A'}</td>
-                    <td class="timestamp">${formatDate(creature.created_at)}</td>
-                    <td id="actions-${creature.id}">
-                        <button class="btn-edit" onclick="enterEditMode(${creature.id})">✏️</button>
-                        <button class="btn-delete" onclick="deleteCreature(${creature.id}, '${creature.sea_creature}')">🗑</button>
+        function updateStats(list) {
+            document.getElementById('stat-total').innerText = list.length;
+            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status || "").toLowerCase().includes("endangered")).length;
+            document.getElementById('stat-stable').innerText = list.filter(c => (c.status || "").toLowerCase().match(/stable|researching|least concern/)).length;
+        }
+
+        function renderTable(list) {
+            const body = document.getElementById('creature-table-body');
+            body.innerHTML = ''; 
+            updateStats(list);
+            list.forEach(c => {
+                // IMPORTANT: We use data-label for mobile view labels
+                body.innerHTML += `<tr id="row-${c.id}">
+                    <td data-label="Creature" class="col-name">${c.sea_creature || 'Unknown'}</td>
+                    <td data-label="Scientific" class="col-science">${c.scientific_name || 'N/A'}</td>
+                    <td data-label="Status" class="col-status">${c.status || 'N/A'}</td>
+                    <td data-label="Date" class="timestamp">${formatDate(c.created_at)}</td>
+                    <td data-label="Action" id="actions-${c.id}">
+                        <button class="btn-edit" onclick="enterEditMode(${c.id})">✏️</button>
+                        <button class="btn-delete" onclick="deleteCreature(${c.id}, '${c.sea_creature}')">🗑</button>
                     </td>
                 </tr>`;
             });
         }
 
-        // --- EDIT MODE LOGIC ---
+        async function adminSignIn() {
+            const email = document.getElementById('admin-email').value, password = document.getElementById('admin-password').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            const status = document.getElementById('auth-status');
+            if (error) { status.innerText = "❌ Denied: " + error.message; status.style.color = "#ff5252"; }
+            else { status.innerText = "✅ Authorized"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
+        }
+
         function enterEditMode(id) {
             const row = document.getElementById(`row-${id}`);
-            const name = row.querySelector('.col-name').innerText;
-            const science = row.querySelector('.col-science').innerText;
-            const status = row.querySelector('.col-status').innerText;
-
+            const name = row.querySelector('.col-name').innerText, science = row.querySelector('.col-science').innerText, status = row.querySelector('.col-status').innerText;
             row.querySelector('.col-name').innerHTML = `<input type="text" class="edit-input" id="edit-name-${id}" value="${name}">`;
             row.querySelector('.col-science').innerHTML = `<input type="text" class="edit-input" id="edit-science-${id}" value="${science}">`;
             row.querySelector('.col-status').innerHTML = `<input type="text" class="edit-input" id="edit-status-${id}" value="${status}">`;
-
-            document.getElementById(`actions-${id}`).innerHTML = `
-                <button class="btn-save" onclick="saveEdit(${id})">💾</button>
-                <button class="btn-delete" onclick="loadCreatures()">❌</button>
-            `;
+            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾 Save</button> <button class="btn-delete" onclick="loadCreatures()">❌ Cancel</button>`;
         }
 
         async function saveEdit(id) {
-            const newName = document.getElementById(`edit-name-${id}`).value;
-            const newScience = document.getElementById(`edit-science-${id}`).value;
-            const newStatus = document.getElementById(`edit-status-${id}`).value;
-
             const { error } = await sb.from('Sea Creatures').update({
-                sea_creature: newName,
-                scientific_name: newScience,
-                status: newStatus
+                sea_creature: document.getElementById(`edit-name-${id}`).value,
+                scientific_name: document.getElementById(`edit-science-${id}`).value,
+                status: document.getElementById(`edit-status-${id}`).value
             }).eq('id', id);
-
-            if (error) {
-                alert("🔒 Update Blocked: Please Login as Admin.");
-                loadCreatures(); // Reset table
-            } else {
-                loadCreatures(); // Refresh data
-            }
-        }
-
-        // --- AUTH & OTHER FUNCTIONS ---
-        async function adminSignIn() {
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            const statusDiv = document.getElementById('auth-status');
-            if (error) { statusDiv.innerText = "❌ Denied: " + error.message; statusDiv.style.color = "#ff5252"; } 
-            else { statusDiv.innerText = "✅ Authorized: Admin Mode Active"; statusDiv.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
+            if (error) alert("🔒 Admin Restricted"); else loadCreatures();
         }
 
         async function addNewCreature() {
-            const name = document.getElementById('new-common-name').value;
-            const science = document.getElementById('new-scientific-name').value;
-            const status = document.getElementById('new-status').value;
-            const { error } = await sb.from('Sea Creatures').insert([{ sea_creature: name, scientific_name: science, status: status }]);
-            if (error) alert("🔒 Admin Authentication Required."); else loadCreatures();
+            const { error } = await sb.from('Sea Creatures').insert([{
+                sea_creature: document.getElementById('new-common-name').value,
+                scientific_name: document.getElementById('new-scientific-name').value,
+                status: document.getElementById('new-status').value
+            }]);
+            if (error) alert("🔒 Login Required"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
-        async function deleteCreature(id, name) {
-            if (!confirm(`⚠️ Delete ${name}?`)) return;
-            const { error } = await sb.from('Sea Creatures').delete().eq('id', id);
-            if (error) alert("🔒 Admin Authentication Required."); else loadCreatures();
+        async function uploadCSV() {
+            const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), bar = document.getElementById('progress-bar'), cont = document.getElementById('progress-container'), txt = document.getElementById('progress-text');
+            if (!file) return alert("Select file!");
+            btn.disabled = true; cont.style.display = txt.style.display = "block";
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const rows = e.target.result.split('\n'), data = [];
+                    rows.forEach((r, i) => {
+                        const cols = r.split(',');
+                        if (cols[0]?.trim()) data.push({ sea_creature: cols[0].trim(), scientific_name: cols[1]?.trim() || '', status: cols[2]?.trim() || '' });
+                        bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
+                    });
+                    txt.innerText = "Deploying...";
+                    const { error } = await sb.from('Sea Creatures').insert(data);
+                    if (error) throw error;
+                    bar.style.width = "100%"; txt.innerText = "Success!"; loadCreatures();
+                } catch (err) { alert(err.message); bar.style.backgroundColor = "red"; }
+                finally { setTimeout(() => { btn.disabled = false; cont.style.display = txt.style.display = "none"; bar.style.width = "0%"; }, 2000); }
+            };
+            reader.readAsText(file);
         }
 
-        function sortData(column) {
-            sortOrder = !sortOrder;
-            filteredData.sort((a, b) => {
-                let vA = a[column]?.toString().toLowerCase() || "";
-                let vB = b[column]?.toString().toLowerCase() || "";
-                return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
-            });
-            renderTable(filteredData);
-        }
-
-        function filterTable() {
-            const filter = document.getElementById("search-input").value.toLowerCase();
-            filteredData = currentData.filter(item => 
-                Object.values(item).some(val => val && val.toString().toLowerCase().includes(filter))
-            );
-            renderTable(filteredData);
-        }
-
-        function exportToCSV() {
-            let csv = "Sea Creature,Scientific Name,Status,Recorded On\n";
-            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${formatDate(i.created_at)}"\n`);
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'ocean_registry.csv');
-            a.click();
-        }
+        async function deleteCreature(id, name) { if (confirm(`Delete ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Admin Restricted"); else loadCreatures(); } }
+        function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
+        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
+        function exportToCSV() { let csv = "Sea Creature,Science,Status,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry.csv'; a.click(); }
 
         loadCreatures();
     </script>
