@@ -28,8 +28,9 @@
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
+        
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
-        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; transition: background 0.2s; }
+        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; transition: background 0.2s; position: relative; }
         th:hover { background: rgba(0, 229, 255, 0.1); }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
@@ -73,7 +74,7 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name ↕️</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Click Photo) ↕️</th>
                     <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
                     <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
                     <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
