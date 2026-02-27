@@ -28,7 +28,6 @@
         
         .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
-        .coord-link:hover { text-decoration: underline; opacity: 1; }
         
         button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
         
@@ -69,9 +68,11 @@
             <button onclick="adminSignIn()" style="width: 100%;">🔑 Admin Login</button>
         </div>
         <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px;">Status: 🌊 Viewing Mode</div>
+        
         <div class="admin-only" style="margin-top: 15px;">
+            <hr style="opacity:0.2; margin-bottom:15px;">
             <input type="file" id="csv-file" accept=".csv" style="color:white; margin-bottom:10px;">
-            <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync CSV</button>
+            <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync Registry CSV</button>
             <button onclick="adminSignOut()" style="background: var(--alert); color: white; margin-top:10px; width: 100%;">🚪 Logout</button>
         </div>
     </div>
@@ -121,8 +122,8 @@
             list.forEach(c => {
                 const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
                 const hasCoords = !isNaN(lat) && !isNaN(lng);
-                // FIX: Removed literal braces to prevent Google 404
-                const gMaps = hasCoords ? "https://www.google.com/maps?q=" + lat + "," + lng : "#";
+                // FIX: Removed literal string braces to solve Google 404
+                const gMaps = hasCoords ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : "#";
                 
                 body.innerHTML += `<tr id="row-${c.id}">
                     <td>
@@ -163,7 +164,9 @@
         }
 
         function deepDiveTrigger(name, lat, lng, id) {
+            // FIX: Numerical guard prevents submarine jumping to top-left [0,0]
             if (isNaN(lat) || isNaN(lng)) return alert("Geospatial data pending.");
+            
             map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 });
             setTimeout(() => {
                 if (markers[id]) markers[id].openPopup();
@@ -175,8 +178,8 @@
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // FIX: Using reliable image engine (LoremFlickr)
-            img.src = (creature && creature.image_url) ? creature.image_url : "https://loremflickr.com/600/400/" + name + ",underwater";
+            // FIX: Using reliable LoremFlickr for keyword-based marine photos
+            img.src = (creature && creature.image_url) ? creature.image_url : "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater";
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
         }
@@ -206,7 +209,6 @@
 
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
         function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
-        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(val))); renderTable(filteredData); }
         checkSession();
     </script>
 </body>
