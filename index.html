@@ -237,32 +237,60 @@
             if (error) alert("🔒 Admin Credentials Required."); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
-        async function uploadCSV() {
-            const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), bar = document.getElementById('progress-bar'), cont = document.getElementById('progress-container'), txt = document.getElementById('progress-text');
+async function uploadCSV() {
+            const file = document.getElementById('csv-file').files[0], 
+                  btn = document.getElementById('csv-btn'), 
+                  bar = document.getElementById('progress-bar'), 
+                  cont = document.getElementById('progress-container'), 
+                  txt = document.getElementById('progress-text');
+
             if (!file) return alert("Select a CSV file first.");
             btn.disabled = true; cont.style.display = txt.style.display = "block";
+            
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const rows = e.target.result.split('\n'), data = [];
                     rows.forEach((r, i) => {
                         const cols = r.split(',');
+                        // Validation: Skip header or empty rows
                         if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
                             data.push({ 
                                 sea_creature: cols[0].trim(), 
                                 scientific_name: cols[1]?.trim() || '', 
                                 status: cols[2]?.trim() || '',
-                                source: cols[3]?.trim() || 'CSV Import'
+                                source: cols[3]?.trim() || 'CSV Update'
                             });
                         }
-                        bar.style.width = Math.round(((i + 1) / rows.length) * 100) + "%";
+                        bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
                     });
-                    txt.innerText = `Deploying ${data.length} species...`;
-                    const { error } = await sb.from('Sea Creatures').insert(data);
+
+                    txt.innerText = "Scanning for duplicates & deploying...";
+
+                    // --- THE UPSERT FEATURE ---
+                    // 'onConflict' tells Supabase which columns to check for duplicates
+                    const { error } = await sb.from('Sea Creatures').upsert(data, { 
+                        onConflict: 'sea_creature, scientific_name' 
+                    });
+
                     if (error) throw error;
-                    txt.innerText = "Ocean Sync Successful!"; loadCreatures();
-                } catch (err) { alert("❌ Failed: " + err.message); bar.style.backgroundColor = "red"; }
-                finally { setTimeout(() => { btn.disabled = false; cont.style.display = txt.style.display = "none"; bar.style.width = "0%"; }, 3000); }
+
+                    bar.style.width = "100%";
+                    txt.innerText = "Ocean Registry Synced (Duplicates Updated)!";
+                    loadCreatures();
+                    alert("Registry Updated! Existing species were updated with the new source.");
+
+                } catch (err) { 
+                    console.error(err);
+                    alert("❌ Sync Failed: " + err.message); 
+                    bar.style.backgroundColor = "red"; 
+                } finally { 
+                    setTimeout(() => { 
+                        btn.disabled = false; 
+                        cont.style.display = txt.style.display = "none"; 
+                        bar.style.width = "0%"; 
+                    }, 3000); 
+                }
             };
             reader.readAsText(file);
         }
@@ -276,3 +304,4 @@
     </script>
 </body>
 </html>
+
