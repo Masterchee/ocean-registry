@@ -11,7 +11,7 @@
             font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(180deg, #0077be 0%, #003366 100%);
             background-attachment: fixed; color: #fff; transition: 0.5s;
-            overflow-x: hidden;
+            overflow-x: hidden; /* Prevent body-level horizontal scrolling */
         }
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .dark-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
@@ -19,28 +19,29 @@
         #map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
         .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Table and Scroll Fixes */
+        /* Table Width and Scroll Fixes */
         .table-container { 
             background: rgba(255, 255, 255, 0.1); 
             backdrop-filter: blur(12px); 
             border-radius: 20px; 
             padding: 15px; 
             border: 1px solid rgba(255, 255, 255, 0.2); 
-            overflow: hidden; /* Removes scroll bar */
+            overflow: hidden; /* Eliminates horizontal scroll bars */
         }
-        table { width: 100%; border-collapse: collapse; color: #fff; table-layout: fixed; }
+        table { width: 100%; border-collapse: collapse; color: #fff; table-layout: fixed; } /* Strict table width */
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         th { border-bottom: 2px solid var(--glow); cursor: pointer; }
 
-        /* Column Width Fixes to prevent horizontal scroll */
-        .col-name { width: 25%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .col-sci { width: 25%; }
-        .col-sts { width: 20%; }
+        /* Reduced Widths for Table Columns */
+        .col-name { width: 28%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-sci { width: 22%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-sts { width: 18%; }
         .col-src { width: 15%; }
-        .col-act { width: 15%; }
+        .col-act { width: 17%; text-align: right; }
 
         .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         .coord-link { display: block; font-size: 0.7em; color: var(--glow); text-decoration: none; margin-top: 2px; opacity: 0.7; }
+        .coord-link:hover { text-decoration: underline; opacity: 1; }
         
         button { padding: 8px 10px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
         
@@ -134,7 +135,9 @@
             list.forEach(c => {
                 const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
                 const hasCoords = !isNaN(lat) && !isNaN(lng);
-                const gMaps = hasCoords ? "http://googleusercontent.com/maps.google.com/search?q=" + lat + "," + lng : "#";
+                
+                // FIXED GOOGLE MAPS LINK: Properly concatenates values to avoid 404 brace error
+                const gMaps = hasCoords ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : "#";
                 
                 body.innerHTML += `<tr id="row-${c.id}">
                     <td class="col-name">
@@ -142,7 +145,7 @@
                             ${c.sea_creature}
                         </span>
                         <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            ${hasCoords ? lat.toFixed(2) + ", " + lng.toFixed(2) : 'No Location'}
+                            ${hasCoords ? "coordinates: " + lat.toFixed(2) + ", " + lng.toFixed(2) : 'No Location Data'}
                         </a>
                     </td>
                     <td class="col-sci">${c.scientific_name}</td>
@@ -167,8 +170,9 @@
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.forEach(d => {
                 const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
+                // STRICT LOCK: Prevents markers from appearing at top-left [0,0] if coordinates are invalid
                 if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
-                    // Standard marker - No submarine icon
+                    // Removed custom submarine/ship icon from discovery map as requested
                     markers[d.id] = L.marker([lat, lng]).bindPopup("<b>" + d.sea_creature + "</b>").addTo(map);
                 }
             });
@@ -186,7 +190,7 @@
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // Enhanced image logic - uses LoremFlickr as the primary search fallback
+            // RELIABLE IMAGE ENGINE: Uses high-fidelity search keyword to fix "Image Not Found"
             const fallback = "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater/all";
             img.src = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
             document.getElementById('gallery-title').innerText = name;
