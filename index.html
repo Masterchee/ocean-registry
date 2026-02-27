@@ -15,26 +15,24 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .dark-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Map Layout & Glow Removal */
+        /* Map Layout & Artifact Removal */
         #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
-        .leaflet-top.leaflet-left { display: none !important; } /* Strips top-left artifacts */
+        .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Animated Submarine Marker */
+        /* Animated Submarine Discovery Marker */
         .sub-marker { background: rgba(0, 229, 255, 0.2); border: 2px solid var(--glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: subPulse 2s infinite ease-in-out; }
-        @keyframes subPulse { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } 50% { transform: scale(1.15); box-shadow: 0 0 20px var(--glow); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } }
+        @keyframes subPulse { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } 50% { transform: scale(1.15); box-shadow: 0 0 15px var(--glow); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } }
 
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
         th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         
-        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; transition: 0.2s; }
-        .col-name-link:hover { text-shadow: 0 0 10px var(--glow); }
+        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
         .coord-link:hover { text-decoration: underline; opacity: 1; }
         
         button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; transition: 0.3s; }
-        button:hover { transform: translateY(-2px); }
         .btn-view { background: #ffeb3b; color: #333; }
         
         #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(10px); }
@@ -130,7 +128,7 @@
                 const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
                 const hasCoords = !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
                 
-                // FIXED GOOGLE MAPS LINK: Uses direct values to prevent literal brace 404s
+                // FIXED GOOGLE MAPS LINK: Uses direct values to prevent literal braces
                 const gMaps = hasCoords ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : "#";
                 
                 body.innerHTML += `<tr id="row-${c.id}">
@@ -164,7 +162,7 @@
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.forEach(d => {
                 const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
-                // COORDINATE LOCK: Prevents submarine from jumping to top-left
+                // STRICT LOCK: Prevents submarine from jumping to top-left
                 if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
                     const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
                     markers[d.id] = L.marker([lat, lng], { icon: submarineIcon }).bindPopup("<b>" + d.sea_creature + "</b>").addTo(map);
@@ -173,9 +171,8 @@
         }
 
         function deepDiveTrigger(name, lat, lng, id) {
-            if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return alert("Geospatial coordinates pending for this species.");
-            
-            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 }); /* Cinematic flyTo */
+            if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return alert("Geospatial coordinates pending.");
+            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 });
             setTimeout(() => {
                 if (markers[id]) markers[id].openPopup();
                 openGallery(name);
@@ -186,7 +183,7 @@
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // UPDATED IMAGE ENGINE: Switches to LoremFlickr for reliable marine search
+            // RELIABLE IMAGE ENGINE: Switches to LoremFlickr for keyword marine photos
             img.src = (creature && creature.image_url) ? creature.image_url : "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater";
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
@@ -204,7 +201,7 @@
                             scientific_name: c[1]?.trim(),
                             status: c[2]?.trim(),
                             source: c[3]?.trim(),
-                            latitude: parseFloat(c[4]), /* Ensure numeric parsing */
+                            latitude: parseFloat(c[4]), 
                             longitude: parseFloat(c[5]),
                             image_url: c[6]?.trim() || null
                         });
