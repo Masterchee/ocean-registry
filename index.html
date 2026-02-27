@@ -15,12 +15,12 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Map Legibility Fix */
-        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; background: #001220; }
+        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; background: #001220; z-index: 1; }
         
-        .glow-marker { background: var(--glow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--glow); animation: mapPulse 2s infinite; }
-        @keyframes mapPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
-        
+        /* Pulse for Critical Rows */
+        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
+        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid var(--alert) !important; }
+
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
@@ -29,7 +29,10 @@
         th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         
-        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
+        /* Coordinate Text Link */
+        .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.8; }
+        .coord-link:hover { text-decoration: underline; opacity: 1; }
+        .col-name-link { cursor: pointer; color: #fff; font-weight: bold; }
         
         .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
         input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
@@ -65,7 +68,7 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Click for Map) ↕️</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Discovery Context) ↕️</th>
                     <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
                     <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
                     <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
@@ -112,7 +115,7 @@
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
         const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], map, markers = {}, isAdmin = false, sortDirection = {};
+        let currentData = [], filteredData = [], map, markers = {}, isAdmin = false;
 
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
@@ -149,11 +152,17 @@
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             list.forEach(c => {
                 const hasCoords = c.latitude && c.longitude;
+                const coordDisplay = hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'Location Pending';
+                const googleMapsUrl = hasCoords ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}` : '#';
+                
                 body.innerHTML += `<tr>
                     <td>
-                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('No coords')`}">
-                            <span style="margin-right:8px">${hasCoords ? '🌍' : '🔘'}</span>${c.sea_creature}
+                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('Geospatial data unavailable.')`}">
+                            ${c.sea_creature}
                         </span>
+                        <a href="${googleMapsUrl}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
+                            📍 ${coordDisplay}
+                        </a>
                     </td>
                     <td>${c.scientific_name}</td>
                     <td>${c.status}</td>
@@ -171,7 +180,6 @@
             m.style.display = m.style.display === "none" ? "block" : "none";
             if (m.style.display === "block") {
                 if (!map) {
-                    // Start zoomed out for context
                     map = L.map('map').setView([20, 0], 2); 
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
                 }
@@ -182,7 +190,8 @@
         function plotDiscoveries() {
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                const icon = L.divIcon({ className: 'glow-marker', iconSize: [12, 12] });
+                // Invisible icons used for logic only, no blue glow displayed
+                const icon = L.divIcon({ className: 'hidden-marker', iconSize: [0, 0] });
                 const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
                 markers[d.id] = m;
             });
@@ -191,7 +200,6 @@
         function jumpToMarker(lat, lng, id) {
             if (document.getElementById('map').style.display === "none") toggleMap();
             setTimeout(() => {
-                // Fly to a medium zoom level (4 instead of 6) for better geographical context
                 map.flyTo([lat, lng], 4, { animate: true, duration: 1.5 });
                 if (markers[id]) markers[id].openPopup();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
