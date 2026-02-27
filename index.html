@@ -26,6 +26,7 @@
         h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
         .deploy-tag { text-align: center; font-size: 0.8em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
+        /* Dashboard & Stats */
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .stat-val { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
@@ -33,9 +34,17 @@
         .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
 
+        /* --- TABLE & CONSERVATION ALERTS --- */
         .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 700px; }
         
+        @keyframes alertPulse {
+            0% { background: rgba(255, 82, 82, 0.1); }
+            50% { background: rgba(255, 82, 82, 0.3); }
+            100% { background: rgba(255, 82, 82, 0.1); }
+        }
+        .alert-critical { animation: alertPulse 2s infinite ease-in-out; border-left: 5px solid #ff5252 !important; }
+
         @media screen and (max-width: 900px) {
             thead { display: none; }
             tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
@@ -70,26 +79,27 @@
 
     <div id="bubble-container"></div>
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Station Management V3.3</div>
+    <div class="deploy-tag">● Research Station Management V3.4</div>
 
     <div class="dashboard">
+        <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea; font-style: italic;">Last Sync: Never</div>
         <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
             <div>TOTAL SPECIES</div>
             <div id="stat-total" class="stat-val">0</div>
         </div>
         <div class="stat-card" style="background: rgba(255, 82, 82, 0.2);">
-            <div>ENDANGERED</div>
+            <div>CRITICAL ALERTS</div>
             <div id="stat-endangered" class="stat-val">0</div>
         </div>
         <div class="stat-card" style="background: rgba(0, 230, 118, 0.2);">
-            <div>STABLE</div>
+            <div>STABLE SPECIES</div>
             <div id="stat-stable" class="stat-val">0</div>
         </div>
     </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records...">
-        <button onclick="exportToCSV()" style="background: #ffeb3b; color: #333;">📤 Export</button>
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records by name, science, or source...">
+        <button onclick="exportToCSV()" style="background: #ffeb3b; color: #333;">📤 Export CSV</button>
     </div>
 
     <div class="table-container">
@@ -111,8 +121,8 @@
     <div class="controls">
         <h3>🛠 Station Admin</h3>
         <div id="login-section" class="auth-box">
-            <input type="email" id="admin-email" placeholder="Email">
-            <input type="password" id="admin-password" placeholder="Password">
+            <input type="email" id="admin-email" placeholder="Researcher Email">
+            <input type="password" id="admin-password" placeholder="Access Key">
             <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Login</button>
         </div>
         <div id="auth-status" style="margin-bottom:10px; font-weight:bold; color: #84ffff;">Status: 🌊 Viewing Mode</div>
@@ -121,15 +131,15 @@
         <hr style="margin: 20px 0; opacity: 0.2;">
 
         <div class="input-group">
-            <label>Name</label><input type="text" id="new-common-name">
-            <label>Scientific</label><input type="text" id="new-scientific-name">
-            <label>Status</label><input type="text" id="new-status">
-            <label>Source</label><input type="text" id="new-source">
+            <label>Common Name</label><input type="text" id="new-common-name">
+            <label>Scientific Name</label><input type="text" id="new-scientific-name">
+            <label>Conservation Status</label><input type="text" id="new-status">
+            <label>Data Source</label><input type="text" id="new-source">
         </div>
         <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
 
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
-            <h4>🚢 Smart CSV Sync</h4>
+            <h4>🚢 Smart CSV Sync (Overwrite Duplicates)</h4>
             <div id="progress-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 10px; display: none; overflow: hidden;">
                 <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: 0.3s;"></div>
             </div>
@@ -162,7 +172,7 @@
             if (session) {
                 loginSection.style.display = "none";
                 logoutBtn.style.display = "block";
-                authStatus.innerText = "✅ Authorized Admin";
+                authStatus.innerText = "✅ Authorized Admin Mode";
                 authStatus.style.color = "#00e676";
             } else {
                 loginSection.style.display = "block";
@@ -184,7 +194,7 @@
             location.reload();
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- CORE LOGIC ---
         function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'N/A'; }
 
         async function loadCreatures() {
@@ -195,12 +205,17 @@
         function renderTable(list) {
             const body = document.getElementById('creature-table-body');
             body.innerHTML = '';
+            
+            // Update Stats
             document.getElementById('stat-total').innerText = list.length;
-            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("endangered")).length;
-            document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern/)).length;
+            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
+            document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern|safe/)).length;
 
             list.forEach(c => {
-                body.innerHTML += `<tr id="row-${c.id}">
+                const isCritical = (c.status || "").toLowerCase().includes("critically endangered");
+                const rowClass = isCritical ? 'class="alert-critical"' : '';
+
+                body.innerHTML += `<tr id="row-${c.id}" ${rowClass}>
                     <td data-label="Creature" class="col-name">${c.sea_creature}</td>
                     <td data-label="Scientific" class="col-sci">${c.scientific_name}</td>
                     <td data-label="Status" class="col-sts">${c.status}</td>
@@ -214,10 +229,19 @@
             });
         }
 
-        // --- SMART UPSERT ---
+        // --- SMART UPSERT & SYNC ---
         async function uploadCSV() {
             const file = document.getElementById('csv-file').files[0];
-            if (!file) return alert("Select CSV");
+            const btn = document.getElementById('csv-btn');
+            const prog = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            
+            if (!file) return alert("Select CSV File");
+            
+            btn.disabled = true;
+            prog.style.display = "block";
+            bar.style.width = "50%";
+
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const rows = e.target.result.split('\n'), data = [];
@@ -232,10 +256,21 @@
                         });
                     }
                 });
-                // The 'onConflict' uses your unique database constraint
+
                 const { error } = await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                if (error) alert("❌ Error: " + error.message);
-                else { alert("✅ Sync Complete!"); loadCreatures(); }
+                
+                if (error) {
+                    alert("❌ Sync Failed: " + error.message);
+                } else {
+                    bar.style.width = "100%";
+                    const now = new Date();
+                    document.getElementById('sync-timestamp').innerText = `Last Sync: ${now.toLocaleTimeString()}`;
+                    alert("✅ Sync Complete! Records merged successfully.");
+                    loadCreatures();
+                }
+                
+                btn.disabled = false;
+                setTimeout(() => prog.style.display = "none", 2000);
             };
             reader.readAsText(file);
         }
@@ -255,9 +290,9 @@
             const row = document.getElementById(`row-${id}`);
             const fields = ['name', 'sci', 'sts', 'src'];
             fields.forEach(f => {
-                const el = row.querySelector(`.col-${f}`);
+                const el = row.querySelector(`.col-${f === 'src' ? 'src span' : f === 'name' ? 'name' : f === 'sci' ? 'sci' : 'sts'}`);
                 const val = el.innerText === 'N/A' ? '' : el.innerText;
-                el.innerHTML = `<input type="text" class="edit-input" value="${val}">`;
+                el.innerHTML = `<input type="text" class="edit-input" value="${val}" spellcheck="false">`;
             });
             document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾</button>`;
         }
@@ -273,7 +308,7 @@
         }
 
         async function deleteItem(id) {
-            if (confirm("Delete?")) await sb.from('Sea Creatures').delete().eq('id', id);
+            if (confirm("Delete this record?")) await sb.from('Sea Creatures').delete().eq('id', id);
             loadCreatures();
         }
 
@@ -281,6 +316,15 @@
             const val = document.getElementById('search-input').value.toLowerCase();
             filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val)));
             renderTable(filteredData);
+        }
+
+        function exportToCSV() {
+            let csv = "Creature,Scientific,Status,Source,Date\n";
+            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = 'aquarium_registry_v3.4.csv';
+            a.click();
         }
 
         checkSession();
