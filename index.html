@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Underwater Registry 🐚</title>
+    <title>Underwater Research Registry 🐚</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -15,68 +15,41 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Map Always Visible - Removed Top Left Glow Icon */
-        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; }
-        
-        /* Submarine Icon Styling and Pulse */
-        .sub-marker {
-            background: rgba(0, 229, 255, 0.2);
-            border: 2px solid var(--glow);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: subPulse 2s infinite ease-in-out;
-        }
+        /* Fixed Map Header & Glow Removal */
+        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
+        .leaflet-top.leaflet-left { display: none !important; } 
 
-        @keyframes subPulse {
-            0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 229, 255, 0.5); }
-            50% { transform: scale(1.15); box-shadow: 0 0 20px rgba(0, 229, 255, 1); }
-            100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 229, 255, 0.5); }
-        }
+        /* Submarine Marker Styling */
+        .sub-marker { background: rgba(0, 229, 255, 0.2); border: 2px solid var(--glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: subPulse 2s infinite ease-in-out; }
+        @keyframes subPulse { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } 50% { transform: scale(1.15); box-shadow: 0 0 15px var(--glow); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } }
 
-        .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
-        .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
-        
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
-        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
+        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         
         .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
         
-        .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
-        
         button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
         .btn-view { background: #ffeb3b; color: #333; }
-        .btn-del { background: var(--alert); color: white; }
         
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; backdrop-filter: blur(5px); }
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(5px); }
         .admin-only { display: none; }
-
-        .switch-container { text-align: center; margin-bottom: 20px; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; vertical-align: middle; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #003366; transition: .4s; border-radius: 20px; border: 1px solid var(--glow); }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
 
     <h2 style="text-align: center;">🔱 Underwater Research Registry</h2>
     
-    <div class="switch-container">
-        <label class="switch"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"><span class="slider"></span></label>
-        <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 5px;">DEEP SEA MODE</span>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <label style="cursor:pointer;"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"> 🌙 DEEP SEA MODE</label>
     </div>
 
     <div id="map"></div>
 
     <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%;">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid var(--glow); color:white;">
         <table>
             <thead>
                 <tr>
@@ -92,34 +65,22 @@
     </div>
 
     <div class="controls">
-        <div id="login-section" style="margin-bottom: 20px;">
-            <input type="email" id="admin-email" placeholder="Researcher Email">
-            <input type="password" id="admin-password" placeholder="Access Key">
-            <button onclick="adminSignIn()" style="width: 100%; margin-top: 10px;">🔑 Admin Login</button>
+        <div id="login-section">
+            <input type="email" id="admin-email" placeholder="Researcher Email" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px;">
+            <input type="password" id="admin-password" placeholder="Access Key" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px;">
+            <button onclick="adminSignIn()" style="width: 100%;">🔑 Admin Login</button>
         </div>
-        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-bottom: 10px;">Status: 🌊 Viewing Mode</div>
-        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: var(--alert); color: white;">🚪 Logout</button>
-
-        <div class="admin-only" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="new-common-name" placeholder="Name">
-                <input type="text" id="new-scientific-name" placeholder="Scientific">
-                <input type="text" id="new-status" placeholder="Status">
-                <input type="text" id="new-source" placeholder="Source">
-                <input type="number" id="new-lat" placeholder="Lat" step="any">
-                <input type="number" id="new-lng" placeholder="Lng" step="any">
-                <input type="text" id="new-img" placeholder="Image URL" style="grid-column: span 2;">
-            </div>
-            <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
-            <input type="file" id="csv-file" accept=".csv" style="margin-top:15px;">
-            <button onclick="uploadCSV()" style="background: var(--save); width: 100%; margin-top:10px;">📥 Sync CSV</button>
+        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px;">Status: 🌊 Viewing Mode</div>
+        <div class="admin-only" style="margin-top: 15px;">
+            <button onclick="adminSignOut()" style="background: var(--alert); color: white;">🚪 Logout</button>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow);">
-            <h2 id="gallery-title" style="margin-top: 15px;"></h2>
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Image+Not+Found'">
+            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
+            <p>Click anywhere to close</p>
         </div>
     </div>
 
@@ -140,9 +101,8 @@
         function updateUI(s) {
             isAdmin = !!s;
             document.getElementById('login-section').style.display = s ? "none" : "block";
-            document.getElementById('logout-btn').style.display = s ? "block" : "none";
-            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = s ? "block" : "none");
+            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
             renderTable(filteredData);
         }
 
@@ -160,26 +120,25 @@
         function renderTable(list) {
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             list.forEach(c => {
-                const hasCoords = c.latitude && c.longitude;
-                const gMaps = hasCoords ? `http://googleusercontent.com/maps.google.com/2{c.latitude},${c.longitude}` : '#';
+                const hasCoords = c.latitude !== null && c.longitude !== null;
+                // FIX: Correct Google Maps URL structure
+                const gMaps = hasCoords ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}` : '#';
+                
                 body.innerHTML += `<tr id="row-${c.id}">
                     <td>
                         <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('No coords')`}">
-                            ${c.sea_creature}
+                            🚢 ${c.sea_creature}
                         </span>
                         <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            ${hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'N/A'}
+                            ${hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'Location Pending'}
                         </a>
                     </td>
-                    <td class="col-sci">${c.scientific_name}</td>
-                    <td class="col-sts">${c.status}</td>
-                    <td class="col-src">${c.source||'N/A'}</td>
-                    <td id="actions-${c.id}">
+                    <td>${c.scientific_name}</td>
+                    <td>${c.status}</td>
+                    <td>${c.source||'N/A'}</td>
+                    <td>
                         <button class="btn-view" onclick="openGallery('${c.sea_creature}')">🖼️</button>
-                        ${isAdmin ? `
-                            <button onclick="enterEdit(${c.id})">✏️</button>
-                            <button class="btn-del" onclick="deleteItem(${c.id})">🗑</button>
-                        ` : ''}
+                        ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
             });
@@ -187,7 +146,7 @@
 
         function initMap() {
             if (!map) {
-                map = L.map('map').setView([20, 0], 2); 
+                map = L.map('map', { zoomControl: false }).setView([20, 0], 2); 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
         }
@@ -195,13 +154,7 @@
         function plotDiscoveries() {
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                // Custom Submarine Icon
-                const submarineIcon = L.divIcon({
-                    className: 'sub-marker',
-                    html: '<span style="font-size:1.4em;">🚢</span>', // Using a ship emoji as a submarine stand-in
-                    iconSize: [35, 35],
-                    popupAnchor: [0, -15]
-                });
+                const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
                 markers[d.id] = L.marker([d.latitude, d.longitude], { icon: submarineIcon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
             });
         }
@@ -215,28 +168,13 @@
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            img.src = (creature && creature.image_url) ? creature.image_url : `https://source.unsplash.com/featured/?${name},underwater`;
+            // FIX: Reliable image fallback engine
+            img.src = (creature && creature.image_url) ? creature.image_url : `https://loremflickr.com/600/400/${name},underwater`;
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
         }
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
-        function enterEdit(id) {
-            const row = document.getElementById(`row-${id}`);
-            const sci = row.querySelector('.col-sci').innerText, sts = row.querySelector('.col-sts').innerText, src = row.querySelector('.col-src').innerText;
-            row.querySelector('.col-sci').innerHTML = `<input type="text" class="edit-input" value="${sci}">`;
-            row.querySelector('.col-sts').innerHTML = `<input type="text" class="edit-input" value="${sts}">`;
-            row.querySelector('.col-src').innerHTML = `<input type="text" class="edit-input" value="${src}">`;
-            document.getElementById(`actions-${id}`).innerHTML = `<button onclick="saveEdit(${id})" style="background:var(--save); color:white;">💾</button> <button onclick="loadCreatures()">❌</button>`;
-        }
-
-        async function saveEdit(id) {
-            const inputs = document.getElementById(`row-${id}`).querySelectorAll('input');
-            await sb.from('Sea Creatures').update({ scientific_name: inputs[0].value, status: inputs[1].value, source: inputs[2].value }).eq('id', id);
-            loadCreatures();
-        }
-
-        async function deleteItem(id) { if(confirm("Delete?")) { await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); } }
         function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
         checkSession();
     </script>
