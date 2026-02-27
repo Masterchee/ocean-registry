@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* --- THEME SYSTEM --- */
         body { 
             font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(180deg, #0077be 0%, #003366 100%);
@@ -19,7 +18,6 @@
             background: rgba(0, 0, 0, 0.8) !important; border: 1px solid var(--glow) !important; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
-        /* --- MAP & ALERTS --- */
         #map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; }
         .glow-marker { background: var(--glow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--glow); animation: mapPulse 2s infinite; }
         @keyframes mapPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
@@ -27,28 +25,28 @@
         @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
         .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid var(--alert) !important; }
 
-        /* --- UI ELEMENTS --- */
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
-        /* CLICKABLE NAME FOR GALLERY */
         .col-name { cursor: pointer; color: var(--glow); text-decoration: underline dotted; font-weight: bold; }
-        .col-name:hover { text-shadow: 0 0 10px var(--glow); }
+        .edit-input { width: 90%; padding: 5px; border-radius: 5px; border: 1px solid var(--glow); background: #fff; color: #333; }
 
         .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
         input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
         button { padding: 10px 20px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
         
-        /* Modal Gallery */
         #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; backdrop-filter: blur(5px); }
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; vertical-align: middle; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #003366; transition: .4s; border-radius: 20px; border: 1px solid var(--glow); }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider:before { transform: translateX(20px); }
+        
+        /* Hidden by default, shown when logged in */
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
@@ -62,7 +60,7 @@
     </div>
 
     <div class="dashboard">
-        <div id="sync-timestamp" style="position: absolute; right: 0; top: -20px; font-size: 0.7em; opacity: 0.7;">Last Sync: Never</div>
+        <div id="sync-timestamp" style="position: absolute; right: 0; top: -20px; font-size: 0.7em; opacity: 0.7;">Last Sync: Checking...</div>
         <div class="stat-card"><div>SPECIES</div><div id="stat-total" style="font-size: 1.5em; font-weight: bold;">0</div></div>
         <div class="stat-card" style="border-color: var(--alert);"><div>CRITICAL</div><div id="stat-endangered" style="font-size: 1.5em; font-weight: bold; color: var(--alert);">0</div></div>
     </div>
@@ -70,15 +68,15 @@
     <div id="map"></div>
 
     <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status..." style="margin-bottom: 15px;">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px;">
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortData('sea_creature')">🧬 Name (Click for Photo)</th>
+                    <th onclick="sortData('sea_creature')">🧬 Name (Click Photo)</th>
                     <th onclick="sortData('scientific_name')">📖 Scientific</th>
                     <th onclick="sortData('status')">📍 Status</th>
                     <th onclick="sortData('source')">📋 Source</th>
-                    <th>⚙️ Actions</th>
+                    <th class="admin-only">⚙️ Actions</th>
                 </tr>
             </thead>
             <tbody id="creature-table-body"></tbody>
@@ -94,28 +92,29 @@
         <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-bottom: 10px;">Status: 🌊 Viewing Mode</div>
         <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: var(--alert); color: white;">🚪 Secure Logout</button>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-            <input type="text" id="new-common-name" placeholder="Common Name">
-            <input type="text" id="new-scientific-name" placeholder="Scientific Name">
-            <input type="text" id="new-status" placeholder="Status">
-            <input type="text" id="new-source" placeholder="Source">
-            <input type="number" id="new-lat" placeholder="Latitude" step="any">
-            <input type="number" id="new-lng" placeholder="Longitude" step="any">
-        </div>
-        <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
+        <div class="admin-only" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="text" id="new-common-name" placeholder="Common Name">
+                <input type="text" id="new-scientific-name" placeholder="Scientific Name">
+                <input type="text" id="new-status" placeholder="Status">
+                <input type="text" id="new-source" placeholder="Source">
+                <input type="number" id="new-lat" placeholder="Latitude" step="any">
+                <input type="number" id="new-lng" placeholder="Longitude" step="any">
+            </div>
+            <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
 
-        <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-            <h4>🚢 Bulk CSV Sync</h4>
-            <input type="file" id="csv-file" accept=".csv">
-            <button onclick="uploadCSV()" style="background: #00e676; margin-top: 10px; width: 100%;">📥 Sync Registry</button>
+            <div style="margin-top: 25px;">
+                <h4>🚢 Bulk CSV Sync</h4>
+                <input type="file" id="csv-file" accept=".csv">
+                <button onclick="uploadCSV()" style="background: #00e676; margin-top: 10px; width: 100%;">📥 Sync Registry</button>
+            </div>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
             <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); box-shadow: 0 0 30px var(--glow);">
-            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 2px 2px 5px #000;"></h2>
-            <p>Click anywhere to close</p>
+            <h2 id="gallery-title" style="margin-top: 15px;"></h2>
         </div>
     </div>
 
@@ -123,9 +122,8 @@
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
         const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], map, markers = [];
+        let currentData = [], filteredData = [], map, markers = [], isAdmin = false;
 
-        // --- THEME & SESSION ---
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
@@ -133,13 +131,19 @@
                 document.getElementById('theme-toggle').checked = true; 
                 document.body.classList.add('deep-sea-mode'); 
             }
+            loadCreatures();
         }
         sb.auth.onAuthStateChange((_, s) => updateUI(s));
+        
         function updateUI(s) {
+            isAdmin = !!s;
             document.getElementById('login-section').style.display = s ? "none" : "block";
             document.getElementById('logout-btn').style.display = s ? "block" : "none";
             document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = s ? "block" : "none");
+            renderTable(currentData); // Re-render to show/hide buttons
         }
+
         async function adminSignIn() { 
             const e = document.getElementById('admin-email').value, p = document.getElementById('admin-password').value; 
             await sb.auth.signInWithPassword({ email: e, password: p }); 
@@ -151,31 +155,14 @@
             localStorage.setItem('ocean-theme', d ? 'deep' : 'light'); 
         }
 
-        // --- MAP LOGIC ---
-        function toggleMap() {
-            const m = document.getElementById('map');
-            m.style.display = m.style.display === "none" ? "block" : "none";
-            if (m.style.display === "block") {
-                if (!map) {
-                    map = L.map('map').setView([20, 0], 2);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-                }
-                setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
-            }
-        }
-        function plotDiscoveries() {
-            markers.forEach(m => map.removeLayer(m)); markers = [];
-            currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                const icon = L.divIcon({ className: 'glow-marker', iconSize: [12, 12] });
-                const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
-                markers.push(m);
-            });
-        }
-
-        // --- DATA LOGIC ---
         async function loadCreatures() {
-            const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (!error) { currentData = filteredData = data; renderTable(data); if(map) plotDiscoveries(); }
+            const { data, error } = await sb.from('Sea Creatures').select('*').order('created_at', { ascending: false });
+            if (!error) { 
+                currentData = filteredData = data; 
+                document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`;
+                renderTable(data); 
+                if(map) plotDiscoveries(); 
+            }
         }
 
         function renderTable(list) {
@@ -185,28 +172,42 @@
             
             list.forEach(c => {
                 const isCrit = (c.status||"").toLowerCase().includes("critically endangered");
-                body.innerHTML += `<tr class="${isCrit ? 'alert-critical' : ''}">
+                body.innerHTML += `<tr id="row-${c.id}" class="${isCrit ? 'alert-critical' : ''}">
                     <td class="col-name" onclick="openGallery('${c.sea_creature}')">${c.sea_creature}</td>
-                    <td>${c.scientific_name}</td>
-                    <td>${c.status}</td>
-                    <td><span style="font-size: 0.8em; opacity: 0.8;">${c.source||'N/A'}</span></td>
-                    <td><button onclick="deleteItem(${c.id})" style="background:var(--alert); padding: 5px 10px;">🗑</button></td>
+                    <td class="col-sci">${c.scientific_name}</td>
+                    <td class="col-sts">${c.status}</td>
+                    <td class="col-src"><span style="font-size: 0.8em; opacity: 0.8;">${c.source||'N/A'}</span></td>
+                    <td class="admin-only" style="display: ${isAdmin ? 'table-cell' : 'none'};">
+                        <button onclick="enterEdit(${c.id})">✏️</button>
+                        <button onclick="deleteItem(${c.id})" style="background:var(--alert); margin-left: 5px;">🗑</button>
+                    </td>
                 </tr>`;
             });
         }
 
-        // --- GALLERY ---
-        function openGallery(name) {
-            const modal = document.getElementById('gallery-modal');
-            const img = document.getElementById('gallery-img');
-            // Fetch relevant image from Unsplash automatically
-            img.src = `https://source.unsplash.com/featured/?${name},underwater`;
-            document.getElementById('gallery-title').innerText = name;
-            modal.style.display = 'block';
+        function enterEdit(id) {
+            const row = document.getElementById(`row-${id}`);
+            const sci = row.querySelector('.col-sci').innerText;
+            const sts = row.querySelector('.col-sts').innerText;
+            const src = row.querySelector('.col-src').innerText;
+            
+            row.querySelector('.col-sci').innerHTML = `<input type="text" class="edit-input" value="${sci}">`;
+            row.querySelector('.col-sts').innerHTML = `<input type="text" class="edit-input" value="${sts}">`;
+            row.querySelector('.col-src').innerHTML = `<input type="text" class="edit-input" value="${src}">`;
+            row.querySelector('.admin-only').innerHTML = `<button onclick="saveEdit(${id})" style="background:#00e676;">💾</button> <button onclick="loadCreatures()">❌</button>`;
         }
-        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
-        // --- ACTIONS ---
+        async function saveEdit(id) {
+            const row = document.getElementById(`row-${id}`);
+            const inputs = row.querySelectorAll('.edit-input');
+            await sb.from('Sea Creatures').update({ 
+                scientific_name: inputs[0].value, 
+                status: inputs[1].value, 
+                source: inputs[2].value 
+            }).eq('id', id);
+            loadCreatures();
+        }
+
         async function uploadCSV() {
             const f = document.getElementById('csv-file').files[0]; if(!f) return;
             const reader = new FileReader(); reader.onload = async (e) => {
@@ -219,7 +220,6 @@
                     });
                 });
                 await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`;
                 loadCreatures();
             }; reader.readAsText(f);
         }
@@ -237,10 +237,36 @@
             loadCreatures();
         }
 
-        async function deleteItem(id) { if(confirm("Permanently delete record?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
+        async function deleteItem(id) { if(confirm("Delete?")) { await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); } }
+        function toggleMap() { 
+            const m = document.getElementById('map'); 
+            m.style.display = m.style.display === "none" ? "block" : "none";
+            if (m.style.display === "block") {
+                if (!map) {
+                    map = L.map('map').setView([20, 0], 2);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                }
+                setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
+            }
+        }
+        function plotDiscoveries() {
+            markers.forEach(m => map.removeLayer(m)); markers = [];
+            currentData.filter(c => c.latitude && c.longitude).forEach(d => {
+                const icon = L.divIcon({ className: 'glow-marker', iconSize: [12, 12] });
+                const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
+                markers.push(m);
+            });
+        }
+        function openGallery(n) { 
+            const img = document.getElementById('gallery-img');
+            img.src = `https://source.unsplash.com/featured/?${n},underwater`;
+            document.getElementById('gallery-title').innerText = n;
+            document.getElementById('gallery-modal').style.display = 'block'; 
+        }
+        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
         function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(s => s?.toString().toLowerCase().includes(v))); renderTable(filteredData); }
 
-        checkSession(); loadCreatures();
+        checkSession();
     </script>
 </body>
 </html>
