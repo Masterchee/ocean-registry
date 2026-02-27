@@ -3,257 +3,427 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ocean Research Registry 🐚</title>
+    <title>Ocean Research Command Center 🐚</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
+        /* Modern CSS Variables */
+        :root {
+            --bg-gradient-top: #001f3f;
+            --bg-gradient-bottom: #000a12;
+            --primary-glow: #00e5ff;
+            --danger: #ff4d4d;
+            --success: #00e676;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(0, 229, 255, 0.2);
+            --text-main: #e0f7fa;
+            --text-muted: #80deea;
+        }
+
+        /* Global Reset & Typography */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; min-height: 100vh;
-            background: linear-gradient(180deg, #0077be 0%, #003366 100%);
-            background-attachment: fixed; color: #fff; transition: 0.5s;
-            overflow-x: hidden;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
+            background: linear-gradient(135deg, var(--bg-gradient-top), var(--bg-gradient-bottom));
+            background-attachment: fixed; 
+            color: var(--text-main); 
+            padding: 2rem; 
+            min-height: 100vh;
+            line-height: 1.6;
         }
-        :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; --bg-card: rgba(255, 255, 255, 0.1); }
-        .dark-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
+
+        /* Typography */
+        h1 { text-align: center; font-size: 2.5rem; margin-bottom: 2rem; text-shadow: 0 0 20px rgba(0, 229, 255, 0.3); }
         
-        /* Stats Dashboard Styling */
+        /* Glassmorphism Components */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dashboard Stats */
         .stats-grid { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-            gap: 15px; margin-bottom: 25px; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 1.5rem; 
+            margin-bottom: 2rem; 
         }
-        .stat-card { 
-            background: var(--bg-card); backdrop-filter: blur(10px); 
-            padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2);
-            text-align: center; transition: 0.3s;
-        }
-        .stat-card:hover { transform: translateY(-3px); border-color: var(--glow); }
-        .stat-value { display: block; font-size: 1.8em; font-weight: bold; color: var(--glow); }
-        .stat-label { font-size: 0.8em; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; }
+        .stat-card { text-align: center; transition: transform 0.2s ease, border-color 0.2s ease; }
+        .stat-card:hover { transform: translateY(-4px); border-color: var(--primary-glow); }
+        .stat-value { font-size: 2.5rem; font-weight: 800; color: var(--primary-glow); line-height: 1; margin-bottom: 0.5rem; display: block; }
+        .stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; }
 
-        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; }
-        
-        /* Pinpoint Styling */
+        /* Map Configuration */
+        #map { 
+            height: 450px; 
+            width: 100%; 
+            border-radius: 16px; 
+            margin-bottom: 2rem; 
+            border: 1px solid var(--glass-border); 
+            z-index: 1; 
+        }
         .pinpoint-marker {
-            background: var(--glow); border: 2px solid #003366;
-            border-radius: 50% 50% 50% 0; width: 20px; height: 20px;
-            transform: rotate(-45deg); display: flex; align-items: center;
-            justify-content: center; cursor: pointer; box-shadow: 0 0 10px var(--glow);
+            background: var(--primary-glow);
+            border: 2px solid #000;
+            border-radius: 50% 50% 50% 0;
+            width: 22px; height: 22px;
+            transform: rotate(-45deg);
+            box-shadow: 0 0 15px var(--primary-glow);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
+        .pinpoint-marker:hover { transform: rotate(-45deg) scale(1.2); }
+        .leaflet-popup-content-wrapper { background: rgba(0, 10, 18, 0.9); color: #fff; border: 1px solid var(--primary-glow); }
+        .leaflet-popup-tip { background: rgba(0, 10, 18, 0.9); }
+        .leaflet-popup-content b { color: var(--primary-glow); cursor: pointer; text-decoration: none; border-bottom: 1px dashed var(--primary-glow); }
 
-        .table-container { 
-            background: var(--bg-card); backdrop-filter: blur(12px); 
-            border-radius: 20px; padding: 15px; border: 1px solid rgba(255,255,255,0.2); 
-            overflow: hidden; 
+        /* Data Table */
+        .table-container { overflow: hidden; }
+        .search-bar {
+            width: 100%; padding: 1rem; border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);
+            color: #fff; font-size: 1rem; margin-bottom: 1.5rem; outline: none; transition: border-color 0.3s;
         }
-        table { width: 100%; border-collapse: collapse; color: #fff; table-layout: fixed; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
-        th { border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
-
-        .col-name { width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .col-sci { width: 25%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .search-bar:focus { border-color: var(--primary-glow); }
+        
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; transition: color 0.2s; }
+        th:hover { color: var(--primary-glow); }
+        
+        .col-name { width: 30%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .col-sci { width: 25%; font-style: italic; opacity: 0.9; }
         .col-sts { width: 15%; }
-        .col-src { width: 15%; }
+        .col-src { width: 15%; opacity: 0.8; }
         .col-act { width: 15%; text-align: right; }
 
-        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
-        .coord-link { display: block; font-size: 0.7em; color: var(--glow); text-decoration: none; margin-top: 2px; opacity: 0.7; }
-        
-        button { padding: 8px 10px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
-        .admin-only { display: none; }
+        .name-link { color: #fff; font-weight: 700; cursor: pointer; transition: color 0.2s; }
+        .name-link:hover { color: var(--primary-glow); }
+        .coord-text { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-family: monospace; }
+
+        /* Buttons & Controls */
+        button { 
+            padding: 0.6rem 1rem; background: rgba(0, 229, 255, 0.1); color: var(--primary-glow); 
+            border: 1px solid var(--primary-glow); border-radius: 8px; cursor: pointer; 
+            font-weight: 600; transition: all 0.2s ease; 
+        }
+        button:hover { background: var(--primary-glow); color: #000; }
+        .btn-danger { color: var(--danger); border-color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: #fff; }
+
+        .admin-panel { margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem; max-width: 400px; margin-inline: auto; }
+        .admin-panel input { padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">🔱 Ocean Research Registry</h2>
-    
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="stat-value" id="stat-total">0</span>
-            <span class="stat-label">Total Species</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-value" id="stat-endangered" style="color: #ffa726;">0</span>
-            <span class="stat-label">Endangered</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-value" id="stat-critical" style="color: var(--alert);">0</span>
-            <span class="stat-label">Critical</span>
-        </div>
-    </div>
-
-    <div style="text-align: center; margin-bottom: 20px;">
-        <label style="cursor:pointer;"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"> 🌙 Dark Mode</label>
-    </div>
-
-    <div id="map"></div>
-
-    <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid var(--glow); color:white; box-sizing: border-box;">
-        <table>
-            <thead>
-                <tr>
-                    <th class="col-name" onclick="sortAlphabetically('sea_creature')">🐠 Name (Discovery) ↕️</th>
-                    <th class="col-sci" onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
-                    <th class="col-sts" onclick="sortAlphabetically('status')">🛡️ Status ↕️</th>
-                    <th class="col-src" onclick="sortAlphabetically('source')">📋 Source ↕️</th>
-                    <th class="col-act">⚙️ Actions</th>
-                </tr>
-            </thead>
-            <tbody id="creature-table-body"></tbody>
-        </table>
-    </div>
-
-    <div class="controls" style="margin-top: 25px; background: rgba(0, 51, 102, 0.5); padding: 20px; border-radius: 20px;">
-        <div id="login-section">
-            <input type="email" id="admin-email" placeholder="Researcher Email" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px; border: 1px solid var(--glow); background: rgba(255,255,255,0.1); color: white;">
-            <input type="password" id="admin-password" placeholder="Access Key" style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid var(--glow); background: rgba(255,255,255,0.1); color: white;">
-            <button onclick="adminSignIn()" style="width: 100%;">🔑 Admin Login</button>
-        </div>
-        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px; text-align: center;">Status: 🌊 Viewing Mode</div>
-        <div class="admin-only" style="margin-top: 15px;">
-            <input type="file" id="csv-file" accept=".csv" style="color:white; margin-bottom:10px;">
-            <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync Registry CSV</button>
-            <button onclick="adminSignOut()" style="background: var(--alert); color: white; margin-top:10px; width: 100%;">🚪 Logout</button>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
-        const _UNSPLASH_KEY = 'rwvKG94GLYXrI4AK7n8AEKI5WVrk4jv-gcf8c-TuOLM'; 
-        const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], map, markers = {}, isAdmin = false;
-
-        async function checkSession() {
-            const { data: { session } } = await sb.auth.getSession();
-            updateUI(session);
-            loadCreatures();
-            initMap();
-        }
-        sb.auth.onAuthStateChange((_, s) => updateUI(s));
+    <main>
+        <h1>🔱 Ocean Research Command Center</h1>
         
-        function updateUI(s) {
-            isAdmin = !!s;
-            document.getElementById('login-section').style.display = s ? "none" : "block";
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = s ? "block" : "none");
-            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
-            renderTable(filteredData);
-        }
+        <section class="stats-grid">
+            <div class="glass-panel stat-card">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">Species Logged</span>
+            </div>
+            <div class="glass-panel stat-card">
+                <span class="stat-value" id="stat-endangered" style="color: #ffb74d;">0</span>
+                <span class="stat-label">Endangered</span>
+            </div>
+            <div class="glass-panel stat-card">
+                <span class="stat-value" id="stat-critical" style="color: var(--danger);">0</span>
+                <span class="stat-label">Critical Priority</span>
+            </div>
+        </section>
 
-        async function adminSignIn() { 
-            const e = document.getElementById('admin-email').value, p = document.getElementById('admin-password').value; 
-            await sb.auth.signInWithPassword({ email: e, password: p }); 
-        }
-        async function adminSignOut() { await sb.auth.signOut(); location.reload(); }
+        <div id="map"></div>
 
-        async function loadCreatures() {
-            const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (!error) { 
-                currentData = filteredData = data; 
-                calculateStats();
-                renderTable(data); 
-                plotDiscoveries(); 
-            }
-        }
+        <section class="glass-panel table-container">
+            <input type="text" id="search-input" class="search-bar" placeholder="🔍 Search database (e.g., 'Shark', 'Vulnerable')...">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-name" data-sort="sea_creature">📍 Discovered At ↕️</th>
+                        <th class="col-sci" data-sort="scientific_name">📖 Taxonomy ↕️</th>
+                        <th class="col-sts" data-sort="status">🛡️ Conservation ↕️</th>
+                        <th class="col-src" data-sort="source">📋 Source ↕️</th>
+                        <th class="col-act">⚙️ Visuals</th>
+                    </tr>
+                </thead>
+                <tbody id="registry-body">
+                    <tr><td colspan="5" style="text-align: center; color: var(--primary-glow);">Calibrating Database...</td></tr>
+                </tbody>
+            </table>
+        </section>
 
-        function calculateStats() {
-            const total = currentData.length;
-            const endangered = currentData.filter(c => c.status.toLowerCase().includes('endangered') && !c.status.toLowerCase().includes('critically')).length;
-            const critical = currentData.filter(c => c.status.toLowerCase().includes('critically endangered')).length;
-
-            document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-endangered').innerText = endangered;
-            document.getElementById('stat-critical').innerText = critical;
-        }
-
-        function renderTable(list) {
-            const body = document.getElementById('creature-table-body'); body.innerHTML = '';
-            list.forEach(c => {
-                const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
-                const hasCoords = !isNaN(lat) && !isNaN(lng);
-                const gMaps = hasCoords ? `http://googleusercontent.com/maps.google.com/search?q=${lat},${lng}` : "#";
-                
-                body.innerHTML += `<tr id="row-${c.id}">
-                    <td class="col-name">
-                        <span class="col-name-link" onclick="focusOnMap(${lat}, ${lng}, ${c.id})">${c.sea_creature}</span>
-                        <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            ${hasCoords ? `coordinates: ${lat.toFixed(2)}, ${lng.toFixed(2)}` : 'No Location Data'}
-                        </a>
-                    </td>
-                    <td class="col-sci">${c.scientific_name}</td>
-                    <td class="col-sts">${c.status}</td>
-                    <td class="col-src">${c.source||'N/A'}</td>
-                    <td class="col-act">
-                        <button onclick="viewImageExternal('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
-                        ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
-                    </td>
-                </tr>`;
-            });
-        }
-
-        function initMap() {
-            if (!map) {
-                map = L.map('map', { zoomControl: false }).setView([20, 0], 2); 
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            }
-        }
-
-        function plotDiscoveries() {
-            Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
-            currentData.forEach(d => {
-                const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
-                if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
-                    const pinIcon = L.divIcon({ className: 'pinpoint-marker', iconSize: [20, 20], popupAnchor: [10, 0] });
-                    const popupContent = `<b onclick="viewImageExternal('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-                    markers[d.id] = L.marker([lat, lng], { icon: pinIcon }).bindPopup(popupContent).addTo(map);
-                }
-            });
-        }
-
-        function focusOnMap(lat, lng, id) {
-            if (isNaN(lat) || isNaN(lng)) return;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            map.flyTo([lat, lng], 7, { animate: true, duration: 1.5 });
-            setTimeout(() => { if (markers[id]) markers[id].openPopup(); }, 1600);
-        }
-
-        async function viewImageExternal(name) {
-            const creature = currentData.find(c => c.sea_creature === name);
-            const dbUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : null;
-            if (dbUrl && !dbUrl.includes('wikipedia')) return window.open(dbUrl, '_blank');
+        <section class="glass-panel admin-panel" id="auth-container">
+            <div id="login-view" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <input type="email" id="admin-email" placeholder="Researcher ID (Email)">
+                <input type="password" id="admin-password" placeholder="Clearance Key">
+                <button onclick="App.authenticate()">🔑 Access Uplink</button>
+            </div>
             
-            const newTab = window.open('about:blank', '_blank');
-            newTab.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:20%;">🔱 Sourcing Official Specimen Visuals...</p>');
-            try {
-                const response = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(name)},underwater&client_id=${_UNSPLASH_KEY}`);
-                const data = await response.json();
-                newTab.location.href = (data.urls && data.urls.regular) ? data.urls.regular : `https://placehold.co/800x600?text=${encodeURIComponent(name)}+Visual+Pending`;
-            } catch (err) { newTab.location.href = `https://placehold.co/800x600?text=${encodeURIComponent(name)}+Visual+Pending`; }
-        }
+            <div id="admin-view" class="hidden" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="text-align: center; color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem;">✅ Connection Secure</div>
+                <input type="file" id="csv-file" accept=".csv" style="padding: 0; border: none; background: transparent;">
+                <button onclick="App.processCSV()" style="background: rgba(0, 230, 118, 0.1); color: var(--success); border-color: var(--success);">📥 Sync Telemetry (CSV)</button>
+                <button onclick="App.terminateSession()" class="btn-danger">🚪 Terminate Session</button>
+            </div>
+        </section>
+    </main>
 
-        async function uploadCSV() {
-            const f = document.getElementById('csv-file').files[0]; if(!f) return;
-            const reader = new FileReader(); reader.onload = async (e) => {
-                const lines = e.target.result.split('\n'), data = [];
-                lines.forEach(l => {
-                    const c = l.split(',');
-                    if (c[0] && c[0].toLowerCase() !== 'sea creature') {
-                        data.push({ sea_creature: c[0].trim(), scientific_name: c[1]?.trim(), status: c[2]?.trim(), source: c[3]?.trim(), latitude: parseFloat(c[4]), longitude: parseFloat(c[5]), image_url: c[6]?.trim() || null });
+    <script>
+        /** * GEMINI 3.1 ARCHITECTURE
+         * Encapsulated application logic utilizing ES6 classes and modular design.
+         */
+        class OceanRegistryApp {
+            constructor() {
+                this.DB_URL = 'https://dfuqjromqjmpeeymiejx.supabase.co';
+                this.DB_KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
+                this.UNSPLASH_KEY = 'rwvKG94GLYXrI4AK7n8AEKI5WVrk4jv-gcf8c-TuOLM'; // Replace prior to deployment
+                
+                this.supabase = window.supabase.createClient(this.DB_URL, this.DB_KEY);
+                this.mapInstance = null;
+                this.mapMarkers = new Map();
+                
+                this.state = { data: [], filtered: [], isAdmin: false, sortAsc: true };
+                
+                this.init();
+            }
+
+            async init() {
+                this.initMap();
+                this.setupEventListeners();
+                
+                const { data: { session } } = await this.supabase.auth.getSession();
+                this.updateAuthUI(!!session);
+                await this.fetchTelemetry();
+            }
+
+            // --- MAP LOGIC ---
+            initMap() {
+                this.mapInstance = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap | CartoDB'
+                }).addTo(this.mapInstance);
+            }
+
+            plotCoordinates() {
+                // Clear existing markers securely
+                this.mapMarkers.forEach(marker => this.mapInstance.removeLayer(marker));
+                this.mapMarkers.clear();
+
+                const icon = L.divIcon({ className: 'pinpoint-marker', iconSize: [22, 22], popupAnchor: [11, 0] });
+
+                this.state.filtered.forEach(record => {
+                    const lat = parseFloat(record.latitude);
+                    const lng = parseFloat(record.longitude);
+
+                    if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+                        const popupHTML = `
+                            <b onclick="App.requestVisual('${record.sea_creature.replace(/'/g, "\\'")}')">${record.sea_creature}</b><br>
+                            <span style="font-family: monospace; opacity: 0.8;">[${lat.toFixed(4)}, ${lng.toFixed(4)}]</span>
+                        `;
+                        const marker = L.marker([lat, lng], { icon }).bindPopup(popupHTML).addTo(this.mapInstance);
+                        this.mapMarkers.set(record.id, marker);
                     }
                 });
-                await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                loadCreatures();
-            }; reader.readAsText(f);
+            }
+
+            focusCoordinates(lat, lng, id) {
+                if (isNaN(lat) || isNaN(lng)) return;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.mapInstance.flyTo([lat, lng], 6, { animate: true, duration: 1.5 });
+                setTimeout(() => { 
+                    const marker = this.mapMarkers.get(id);
+                    if (marker) marker.openPopup(); 
+                }, 1600);
+            }
+
+            // --- DATA LOGIC ---
+            async fetchTelemetry() {
+                try {
+                    const { data, error } = await this.supabase.from('Sea Creatures').select('*');
+                    if (error) throw error;
+                    this.state.data = data;
+                    this.state.filtered = [...data];
+                    this.updateDashboard();
+                    this.renderTable();
+                    this.plotCoordinates();
+                } catch (err) {
+                    console.error("Telemetry Sync Failed:", err);
+                    document.getElementById('registry-body').innerHTML = `<tr><td colspan="5" style="color:var(--danger); text-align:center;">Database Offline</td></tr>`;
+                }
+            }
+
+            updateDashboard() {
+                document.getElementById('stat-total').innerText = this.state.data.length;
+                
+                const endangered = this.state.data.filter(c => {
+                    const status = c.status.toLowerCase();
+                    return status.includes('endangered') && !status.includes('critically');
+                }).length;
+                
+                const critical = this.state.data.filter(c => 
+                    c.status.toLowerCase().includes('critically endangered')
+                ).length;
+
+                document.getElementById('stat-endangered').innerText = endangered;
+                document.getElementById('stat-critical').innerText = critical;
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('registry-body');
+                if (this.state.filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No records found matching query.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = this.state.filtered.map(record => {
+                    const lat = parseFloat(record.latitude);
+                    const lng = parseFloat(record.longitude);
+                    const validCoords = !isNaN(lat) && !isNaN(lng);
+                    const safeName = record.sea_creature.replace(/'/g, "\\'");
+
+                    return `
+                        <tr>
+                            <td class="col-name">
+                                <span class="name-link" onclick="App.focusCoordinates(${lat}, ${lng}, ${record.id})">${record.sea_creature}</span>
+                                <span class="coord-text">${validCoords ? `[ ${lat.toFixed(2)}, ${lng.toFixed(2)} ]` : 'Location Unknown'}</span>
+                            </td>
+                            <td class="col-sci">${record.scientific_name}</td>
+                            <td class="col-sts">${record.status}</td>
+                            <td class="col-src">${record.source || 'N/A'}</td>
+                            <td class="col-act">
+                                <button onclick="App.requestVisual('${safeName}')" title="View Specimen">🖼️</button>
+                                ${this.state.isAdmin ? `<button class="btn-danger" onclick="App.deleteRecord(${record.id})" style="margin-left: 5px;">🗑️</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // --- EXTERNAL VISUAL ENGINE ---
+            async requestVisual(name) {
+                const record = this.state.data.find(c => c.sea_creature === name);
+                const dbUrl = record?.image_url;
+
+                if (dbUrl && dbUrl.startsWith('http') && !dbUrl.includes('wikipedia')) {
+                    return window.open(dbUrl, '_blank');
+                }
+                
+                const newTab = window.open('about:blank', '_blank');
+                newTab.document.write(`
+                    <body style="background:#001220; color:#00e5ff; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;">
+                        <h3>🔱 Interfacing with Unsplash Database...</h3>
+                    </body>
+                `);
+                
+                try {
+                    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(name)},underwater&client_id=${this.UNSPLASH_KEY}`);
+                    const data = await res.json();
+                    newTab.location.href = data?.urls?.regular || `https://placehold.co/800x600/001220/00e5ff?text=${encodeURIComponent(name)}+Visual+Pending`;
+                } catch {
+                    newTab.location.href = `https://placehold.co/800x600/001220/00e5ff?text=${encodeURIComponent(name)}+Visual+Pending`;
+                }
+            }
+
+            // --- UTILITIES & AUTH ---
+            setupEventListeners() {
+                // Live Search
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    this.state.filtered = this.state.data.filter(c => 
+                        Object.values(c).some(val => String(val).toLowerCase().includes(term))
+                    );
+                    this.renderTable();
+                    this.plotCoordinates();
+                });
+
+                // Column Sorting
+                document.querySelectorAll('th[data-sort]').forEach(th => {
+                    th.addEventListener('click', () => {
+                        const key = th.dataset.sort;
+                        this.state.sortAsc = !this.state.sortAsc;
+                        this.state.filtered.sort((a, b) => {
+                            const valA = String(a[key] || '').toLowerCase();
+                            const valB = String(b[key] || '').toLowerCase();
+                            if (valA < valB) return this.state.sortAsc ? -1 : 1;
+                            if (valA > valB) return this.state.sortAsc ? 1 : -1;
+                            return 0;
+                        });
+                        this.renderTable();
+                    });
+                });
+            }
+
+            updateAuthUI(isLoggedIn) {
+                this.state.isAdmin = isLoggedIn;
+                document.getElementById('login-view').classList.toggle('hidden', isLoggedIn);
+                document.getElementById('admin-view').classList.toggle('hidden', !isLoggedIn);
+                this.renderTable(); // Re-render to show/hide delete buttons
+            }
+
+            async authenticate() {
+                const email = document.getElementById('admin-email').value;
+                const password = document.getElementById('admin-password').value;
+                const { error } = await this.supabase.auth.signInWithPassword({ email, password });
+                if (error) alert("Authentication Failed: " + error.message);
+                else this.updateAuthUI(true);
+            }
+
+            async terminateSession() {
+                await this.supabase.auth.signOut();
+                this.updateAuthUI(false);
+            }
+
+            async processCSV() {
+                const file = document.getElementById('csv-file').files[0];
+                if (!file) return alert("Select a CSV payload first.");
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const lines = e.target.result.split('\n');
+                    const payload = lines.slice(1).filter(l => l.trim()).map(l => {
+                        const cols = l.split(',');
+                        return {
+                            sea_creature: cols[0].trim(),
+                            scientific_name: cols[1]?.trim(),
+                            status: cols[2]?.trim(),
+                            source: cols[3]?.trim(),
+                            latitude: parseFloat(cols[4]),
+                            longitude: parseFloat(cols[5]),
+                            image_url: cols[6]?.trim() || null
+                        };
+                    });
+
+                    const { error } = await this.supabase.from('Sea Creatures').upsert(payload, { onConflict: 'sea_creature,scientific_name' });
+                    if (error) alert("Sync Error: " + error.message);
+                    else {
+                        alert("Telemetry Sync Complete.");
+                        this.fetchTelemetry();
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            async deleteRecord(id) {
+                if(!confirm("Eradicate this record from the database?")) return;
+                await this.supabase.from('Sea Creatures').delete().eq('id', id);
+                this.fetchTelemetry();
+            }
         }
 
-        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-        function filterTable() { 
-            const val = document.getElementById('search-input').value.toLowerCase(); 
-            filteredData = currentData.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(val))); 
-            renderTable(filteredData); 
-        }
-        checkSession();
+        // Initialize App Globally
+        const App = new OceanRegistryApp();
     </script>
 </body>
 </html>
-
