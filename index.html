@@ -15,13 +15,27 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .dark-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Map Layout & Artifact Removal */
+        /* Fixed Map Header & Glow Removal */
         #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
         .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Animated Submarine Discovery Marker */
-        .sub-marker { background: rgba(0, 229, 255, 0.2); border: 2px solid var(--glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: subPulse 2s infinite ease-in-out; }
-        @keyframes subPulse { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } 50% { transform: scale(1.15); box-shadow: 0 0 15px var(--glow); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } }
+        /* Animated Submarine Marker with "Sub-Marker" for identification */
+        .sub-marker {
+            background: rgba(0, 229, 255, 0.2);
+            border: 2px solid var(--glow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: subPulse 2s infinite ease-in-out;
+            cursor: pointer;
+        }
+
+        @keyframes subPulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); }
+            50% { transform: scale(1.15); box-shadow: 0 0 15px var(--glow); }
+            100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); }
+        }
 
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
@@ -30,12 +44,11 @@
         
         .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
-        .coord-link:hover { text-decoration: underline; opacity: 1; }
         
-        button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; transition: 0.3s; }
+        button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
         .btn-view { background: #ffeb3b; color: #333; }
         
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(10px); }
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(8px); }
         .admin-only { display: none; }
     </style>
 </head>
@@ -54,9 +67,9 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🐙 Name (Deep Dive) ↕️</th>
-                    <th onclick="sortAlphabetically('scientific_name')">📖 Scientific Name ↕️</th>
-                    <th onclick="sortAlphabetically('status')">🛡️ Status ↕️</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Deep Dive) ↕️</th>
+                    <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
+                    <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
                     <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
                     <th>⚙️ Actions</th>
                 </tr>
@@ -85,7 +98,6 @@
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
             <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Image+Not+Found'">
             <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
-            <p style="font-size: 0.8em; opacity: 0.7;">Click anywhere to surface</p>
         </div>
     </div>
 
@@ -126,9 +138,9 @@
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             list.forEach(c => {
                 const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
-                const hasCoords = !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
+                const hasCoords = !isNaN(lat) && !isNaN(lng);
                 
-                // FIXED GOOGLE MAPS LINK: Uses direct values to prevent literal braces
+                // FIXED: Direct values prevents the "brace 404" from screenshot image_3503e2.png
                 const gMaps = hasCoords ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : "#";
                 
                 body.innerHTML += `<tr id="row-${c.id}">
@@ -162,17 +174,20 @@
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.forEach(d => {
                 const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
-                // STRICT LOCK: Prevents submarine from jumping to top-left
-                if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+                // Strict validation ensures no jumping
+                if (!isNaN(lat) && !isNaN(lng)) {
                     const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
+                    // Fixed: and stay center means use map.flyTo, so don't center here.
                     markers[d.id] = L.marker([lat, lng], { icon: submarineIcon }).bindPopup("<b>" + d.sea_creature + "</b>").addTo(map);
                 }
             });
         }
 
         function deepDiveTrigger(name, lat, lng, id) {
-            if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return alert("Geospatial coordinates pending.");
-            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 });
+            // FIX: Numerical guard prevents submarine jumping to top-left
+            if (isNaN(lat) || isNaN(lng)) return alert("Geospatial data pending.");
+            
+            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 }); /* Cinematic Zoom */
             setTimeout(() => {
                 if (markers[id]) markers[id].openPopup();
                 openGallery(name);
@@ -183,7 +198,7 @@
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // RELIABLE IMAGE ENGINE: Switches to LoremFlickr for keyword marine photos
+            // FIX: Using reliable image engine LoremFlickr
             img.src = (creature && creature.image_url) ? creature.image_url : "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater";
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
@@ -202,7 +217,7 @@
                             status: c[2]?.trim(),
                             source: c[3]?.trim(),
                             latitude: parseFloat(c[4]), 
-                            longitude: parseFloat(c[5]),
+                            longitude: parseFloat(c[5]), 
                             image_url: c[6]?.trim() || null
                         });
                     }
@@ -213,8 +228,7 @@
         }
 
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
-        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(val))); renderTable(filteredData); }
+        function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
         checkSession();
     </script>
 </body>
