@@ -26,7 +26,6 @@
         h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
         .deploy-tag { text-align: center; font-size: 0.8em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
 
-        /* Dashboard Responsive Layout */
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .stat-val { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
@@ -34,7 +33,6 @@
         .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
 
-        /* --- TABLE & MOBILE CARDS --- */
         .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 600px; }
         
@@ -42,20 +40,17 @@
             thead { display: none; }
             tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
             td { display: flex; justify-content: space-between; padding: 8px 5px; border: none; font-size: 0.9em; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
-            td:last-child { border-bottom: none; }
             td::before { content: attr(data-label); font-weight: bold; color: #84ffff; text-transform: uppercase; font-size: 0.75em; text-align: left; }
             button { width: 48%; margin-top: 5px; }
         }
 
         @media screen and (min-width: 901px) {
             th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: 0.3s; }
-            th:hover { background: rgba(0, 184, 212, 0.8); color: #fff; }
+            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
             .search-container { flex-direction: row; }
         }
 
         .edit-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; background: white; color: #333; }
-        .timestamp { font-size: 0.85em; color: #80deea; font-style: italic; }
         .source-tag { background: rgba(132, 255, 255, 0.15); padding: 4px 8px; border-radius: 5px; font-size: 0.85em; color: #84ffff; border: 1px solid rgba(132, 255, 255, 0.3); }
 
         .controls { position: relative; z-index: 2; margin-top: 30px; padding: 25px; background: rgba(0, 51, 102, 0.8); border-radius: 20px; border: 1px solid #00b8d4; }
@@ -65,37 +60,36 @@
         .btn-delete { background: #ff5252; color: white; }
         .btn-edit { background: #ffa726; color: white; }
         .btn-save { background: #00e676; color: white; }
-        .btn-export { background: #ffeb3b; color: #333; }
+        .btn-logout { background: #ff5252; color: white; margin-top: 10px; display: none; }
         
-        .input-group label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; font-weight: bold; }
         input { width: 100%; padding: 12px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid #00b8d4; border-radius: 10px; color: white; outline: none; box-sizing: border-box; }
+        label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="bubble-container"></div>
-
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Live Data Monitoring System - V3.2 (Smart Upsert)</div>
+    <div class="deploy-tag">● Station Management V3.3</div>
 
     <div class="dashboard">
         <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
-            <div style="font-size: 0.7em; letter-spacing: 1px;">TOTAL SPECIES</div>
+            <div>TOTAL SPECIES</div>
             <div id="stat-total" class="stat-val">0</div>
         </div>
         <div class="stat-card" style="background: rgba(255, 82, 82, 0.2);">
-            <div style="font-size: 0.7em; letter-spacing: 1px;">ENDANGERED</div>
+            <div>ENDANGERED</div>
             <div id="stat-endangered" class="stat-val">0</div>
         </div>
         <div class="stat-card" style="background: rgba(0, 230, 118, 0.2);">
-            <div style="font-size: 0.7em; letter-spacing: 1px;">STABLE/SECURE</div>
+            <div>STABLE</div>
             <div id="stat-stable" class="stat-val">0</div>
         </div>
     </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status, or source...">
-        <button class="btn-export" onclick="exportToCSV()">📤 Export CSV</button>
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records...">
+        <button onclick="exportToCSV()" style="background: #ffeb3b; color: #333;">📤 Export</button>
     </div>
 
     <div class="table-container">
@@ -106,7 +100,7 @@
                     <th onclick="sortData('scientific_name')">📖 Scientific</th>
                     <th onclick="sortData('status')">📍 Status</th>
                     <th onclick="sortData('source')">📋 Source</th>
-                    <th onclick="sortData('created_at')">🕒 Recorded</th>
+                    <th onclick="sortData('created_at')">🕒 Date</th>
                     <th>⚙️ Actions</th>
                 </tr>
             </thead>
@@ -115,32 +109,32 @@
     </div>
 
     <div class="controls">
-        <h3>🛠 Station Management</h3>
+        <h3>🛠 Station Admin</h3>
         <div id="login-section" class="auth-box">
             <input type="email" id="admin-email" placeholder="Email">
             <input type="password" id="admin-password" placeholder="Password">
-            <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Authenticate Admin</button>
+            <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Login</button>
         </div>
-        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em; color: #84ffff;">Status: 🌊 Viewing Mode</div>
+        <div id="auth-status" style="margin-bottom:10px; font-weight:bold; color: #84ffff;">Status: 🌊 Viewing Mode</div>
+        <button id="logout-btn" class="btn-logout" onclick="adminSignOut()">🚪 Secure Logout</button>
         
         <hr style="margin: 20px 0; opacity: 0.2;">
 
         <div class="input-group">
-            <label>Sea Creature Name</label><input type="text" id="new-common-name">
-            <label>Scientific Designation</label><input type="text" id="new-scientific-name">
-            <label>Conservation Status</label><input type="text" id="new-status">
-            <label>Data Source</label><input type="text" id="new-source">
+            <label>Name</label><input type="text" id="new-common-name">
+            <label>Scientific</label><input type="text" id="new-scientific-name">
+            <label>Status</label><input type="text" id="new-status">
+            <label>Source</label><input type="text" id="new-source">
         </div>
         <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
 
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
-            <h4>🚢 Smart Bulk Sync (Overwrite Duplicates)</h4>
-            <p id="progress-text" style="font-size: 0.8em; color: #84ffff; display: none;"></p>
-            <div id="progress-container" style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 15px; display: none; overflow: hidden;">
-                <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
+            <h4>🚢 Smart CSV Sync</h4>
+            <div id="progress-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 10px; display: none; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: 0.3s;"></div>
             </div>
-            <input type="file" id="csv-file" accept=".csv" style="color:#fff; margin-bottom:15px;"><br>
-            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Sync CSV Data</button>
+            <input type="file" id="csv-file" accept=".csv" style="margin-bottom:10px;"><br>
+            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Sync Data</button>
         </div>
     </div>
 
@@ -151,161 +145,146 @@
         const sb = window.supabase.createClient(_URL, _KEY);
         let currentData = [], filteredData = [], sortOrder = true;
 
-        function createBubbles() {
-            const container = document.getElementById('bubble-container');
-            for (let i = 0; i < 12; i++) {
-                const bubble = document.createElement('div');
-                bubble.className = 'bubble';
-                const size = Math.random() * 20 + 10 + "px";
-                bubble.style.width = bubble.style.height = size;
-                bubble.style.left = Math.random() * 100 + "vw";
-                bubble.style.animationDelay = Math.random() * 10 + "s";
-                bubble.style.animationDuration = Math.random() * 5 + 7 + "s";
-                container.appendChild(bubble);
+        // --- SESSION PERSISTENCE ---
+        async function checkSession() {
+            const { data: { session } } = await sb.auth.getSession();
+            updateUI(session);
+        }
+
+        sb.auth.onAuthStateChange((event, session) => {
+            updateUI(session);
+        });
+
+        function updateUI(session) {
+            const loginSection = document.getElementById('login-section');
+            const authStatus = document.getElementById('auth-status');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (session) {
+                loginSection.style.display = "none";
+                logoutBtn.style.display = "block";
+                authStatus.innerText = "✅ Authorized Admin";
+                authStatus.style.color = "#00e676";
+            } else {
+                loginSection.style.display = "block";
+                logoutBtn.style.display = "none";
+                authStatus.innerText = "Status: 🌊 Viewing Mode";
+                authStatus.style.color = "#84ffff";
             }
         }
-        createBubbles();
 
-        function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'; }
+        async function adminSignIn() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+        }
+
+        async function adminSignOut() {
+            await sb.auth.signOut();
+            location.reload();
+        }
+
+        // --- CORE FUNCTIONS ---
+        function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'N/A'; }
 
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
             if (!error) { currentData = filteredData = data; renderTable(currentData); }
         }
 
-        function updateStats(list) {
-            document.getElementById('stat-total').innerText = list.length;
-            const end = list.filter(c => (c.status || "").toLowerCase().match(/endangered|critical/)).length;
-            const sta = list.filter(c => (c.status || "").toLowerCase().match(/stable|researching|least concern|secure/)).length;
-            document.getElementById('stat-endangered').innerText = end;
-            document.getElementById('stat-stable').innerText = sta;
-        }
-
         function renderTable(list) {
             const body = document.getElementById('creature-table-body');
-            body.innerHTML = ''; updateStats(list);
+            body.innerHTML = '';
+            document.getElementById('stat-total').innerText = list.length;
+            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("endangered")).length;
+            document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern/)).length;
+
             list.forEach(c => {
                 body.innerHTML += `<tr id="row-${c.id}">
-                    <td data-label="Creature" class="col-name">${c.sea_creature || 'Unknown'}</td>
-                    <td data-label="Scientific" class="col-science">${c.scientific_name || 'N/A'}</td>
-                    <td data-label="Status" class="col-status">${c.status || 'N/A'}</td>
-                    <td data-label="Source" class="col-source"><span class="source-tag">${c.source || 'N/A'}</span></td>
+                    <td data-label="Creature" class="col-name">${c.sea_creature}</td>
+                    <td data-label="Scientific" class="col-sci">${c.scientific_name}</td>
+                    <td data-label="Status" class="col-sts">${c.status}</td>
+                    <td data-label="Source" class="col-src"><span class="source-tag">${c.source || 'N/A'}</span></td>
                     <td data-label="Date" class="timestamp">${formatDate(c.created_at)}</td>
                     <td data-label="Actions" id="actions-${c.id}">
-                        <button class="btn-edit" onclick="enterEditMode(${c.id})">✏️</button>
-                        <button class="btn-delete" onclick="deleteCreature(${c.id}, '${c.sea_creature}')">🗑</button>
+                        <button onclick="enterEdit(${c.id})">✏️</button>
+                        <button class="btn-delete" onclick="deleteItem(${c.id})">🗑</button>
                     </td>
                 </tr>`;
             });
         }
 
-        async function adminSignIn() {
-            const email = document.getElementById('admin-email').value, password = document.getElementById('admin-password').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            const status = document.getElementById('auth-status');
-            if (error) { status.innerText = "❌ Login Error: " + error.message; status.style.color = "#ff5252"; }
-            else { status.innerText = "✅ Admin Authorized"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
-        }
-
-        function enterEditMode(id) {
-            const row = document.getElementById(`row-${id}`);
-            const name = row.querySelector('.col-name').innerText, sci = row.querySelector('.col-science').innerText, sts = row.querySelector('.col-status').innerText, src = row.querySelector('.source-tag').innerText;
-            row.querySelector('.col-name').innerHTML = `<input type="text" class="edit-input" id="edit-name-${id}" value="${name}">`;
-            row.querySelector('.col-science').innerHTML = `<input type="text" class="edit-input" id="edit-sci-${id}" value="${sci}">`;
-            row.querySelector('.col-status').innerHTML = `<input type="text" class="edit-input" id="edit-sts-${id}" value="${sts}">`;
-            row.querySelector('.col-source').innerHTML = `<input type="text" class="edit-input" id="edit-src-${id}" value="${src}">`;
-            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾 Save</button> <button class="btn-delete" onclick="loadCreatures()">❌</button>`;
-        }
-
-        async function saveEdit(id) {
-            const { error } = await sb.from('Sea Creatures').update({
-                sea_creature: document.getElementById(`edit-name-${id}`).value,
-                scientific_name: document.getElementById(`edit-sci-${id}`).value,
-                status: document.getElementById(`edit-sts-${id}`).value,
-                source: document.getElementById(`edit-src-${id}`).value
-            }).eq('id', id);
-            if (error) alert("🔒 Login Required"); else loadCreatures();
+        // --- SMART UPSERT ---
+        async function uploadCSV() {
+            const file = document.getElementById('csv-file').files[0];
+            if (!file) return alert("Select CSV");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const rows = e.target.result.split('\n'), data = [];
+                rows.forEach(r => {
+                    const cols = r.split(',');
+                    if (cols[0] && cols[0].toLowerCase() !== "sea creature") {
+                        data.push({ 
+                            sea_creature: cols[0].trim(), 
+                            scientific_name: cols[1]?.trim(), 
+                            status: cols[2]?.trim(), 
+                            source: cols[3]?.trim() || 'CSV Sync' 
+                        });
+                    }
+                });
+                // The 'onConflict' uses your unique database constraint
+                const { error } = await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
+                if (error) alert("❌ Error: " + error.message);
+                else { alert("✅ Sync Complete!"); loadCreatures(); }
+            };
+            reader.readAsText(file);
         }
 
         async function addNewCreature() {
-            const { error } = await sb.from('Sea Creatures').insert([{
+            const entry = {
                 sea_creature: document.getElementById('new-common-name').value,
                 scientific_name: document.getElementById('new-scientific-name').value,
                 status: document.getElementById('new-status').value,
                 source: document.getElementById('new-source').value
-            }]);
-            if (error) alert("🔒 Admin Access Only"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
+            };
+            const { error } = await sb.from('Sea Creatures').upsert([entry], { onConflict: 'sea_creature,scientific_name' });
+            if (error) alert("🔒 Admin Access Required"); else loadCreatures();
         }
 
-async function uploadCSV() {
-    const file = document.getElementById('csv-file').files[0], 
-          btn = document.getElementById('csv-btn'), 
-          bar = document.getElementById('progress-bar'), 
-          cont = document.getElementById('progress-container'), 
-          txt = document.getElementById('progress-text');
-
-    if (!file) return alert("Select CSV!");
-    btn.disabled = true; 
-    cont.style.display = txt.style.display = "block";
-    
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const rows = e.target.result.split('\n'), data = [];
-            rows.forEach((r) => {
-                const cols = r.split(',');
-                if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
-                    data.push({ 
-                        sea_creature: cols[0].trim(), 
-                        scientific_name: cols[1]?.trim() || '', 
-                        status: cols[2]?.trim() || '',
-                        source: cols[3]?.trim() || 'CSV Update'
-                    });
-                }
+        function enterEdit(id) {
+            const row = document.getElementById(`row-${id}`);
+            const fields = ['name', 'sci', 'sts', 'src'];
+            fields.forEach(f => {
+                const el = row.querySelector(`.col-${f}`);
+                const val = el.innerText === 'N/A' ? '' : el.innerText;
+                el.innerHTML = `<input type="text" class="edit-input" value="${val}">`;
             });
-
-            txt.innerText = "Merging records... 🌊";
-
-            // --- THE CRITICAL UPSERT FIX ---
-            // We are using the exact column names as defined in your UNIQUE constraint.
-            const { error } = await sb
-                .from('Sea Creatures')
-                .upsert(data, { 
-                    onConflict: 'sea_creature,scientific_name', // Must be comma-separated, no spaces
-                    ignoreDuplicates: false // Set to false to ensure it OVERWRITES
-                });
-
-            if (error) throw error;
-
-            bar.style.width = "100%";
-            txt.innerText = "Ocean Registry Synced!";
-            loadCreatures();
-            alert("Success! Duplicates were updated with the new source data.");
-
-        } catch (err) { 
-            console.error("Supabase Error Object:", err);
-            // If it still says "Unique Constraint Violation", it means the JS isn't reaching the Upsert logic correctly
-            alert("❌ Sync Failed: " + err.message); 
-            bar.style.backgroundColor = "red"; 
-        } finally { 
-            setTimeout(() => { 
-                btn.disabled = false; 
-                cont.style.display = txt.style.display = "none"; 
-                bar.style.width = "0%"; 
-                bar.style.backgroundColor = "#00e676";
-            }, 3000); 
+            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾</button>`;
         }
-    };
-    reader.readAsText(file);
-}
 
-        async function deleteCreature(id, name) { if (confirm(`Permanent removal of ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Restricted"); else loadCreatures(); } }
-        function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
-        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
-        function exportToCSV() { let csv = "Sea Creature,Science,Status,Source,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry_v3_2.csv'; a.click(); }
+        async function saveEdit(id) {
+            const row = document.getElementById(`row-${id}`);
+            const inputs = row.querySelectorAll('input');
+            const { error } = await sb.from('Sea Creatures').update({
+                sea_creature: inputs[0].value, scientific_name: inputs[1].value,
+                status: inputs[2].value, source: inputs[3].value
+            }).eq('id', id);
+            if (error) alert("Access Denied"); else loadCreatures();
+        }
 
+        async function deleteItem(id) {
+            if (confirm("Delete?")) await sb.from('Sea Creatures').delete().eq('id', id);
+            loadCreatures();
+        }
+
+        function filterTable() {
+            const val = document.getElementById('search-input').value.toLowerCase();
+            filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val)));
+            renderTable(filteredData);
+        }
+
+        checkSession();
         loadCreatures();
     </script>
 </body>
 </html>
-
