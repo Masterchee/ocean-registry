@@ -15,11 +15,9 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Fixed Map Header & Glow Removal */
         #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
         .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Submarine Marker Styling */
         .sub-marker { background: rgba(0, 229, 255, 0.2); border: 2px solid var(--glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: subPulse 2s infinite ease-in-out; }
         @keyframes subPulse { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } 50% { transform: scale(1.15); box-shadow: 0 0 15px var(--glow); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); } }
 
@@ -32,9 +30,9 @@
         .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
         
         button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
-        .btn-view { background: #ffeb3b; color: #333; }
         
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(5px); }
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(8px); }
+        #gallery-modal img { max-height: 70vh; transition: transform 0.5s ease; }
         .admin-only { display: none; }
     </style>
 </head>
@@ -53,7 +51,7 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Click for Map) ↕️</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Deep Dive Trigger) ↕️</th>
                     <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
                     <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
                     <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
@@ -71,16 +69,19 @@
             <button onclick="adminSignIn()" style="width: 100%;">🔑 Admin Login</button>
         </div>
         <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px;">Status: 🌊 Viewing Mode</div>
+        
         <div class="admin-only" style="margin-top: 15px;">
-            <button onclick="adminSignOut()" style="background: var(--alert); color: white;">🚪 Logout</button>
+            <hr style="opacity:0.2; margin-bottom:15px;">
+            <input type="file" id="csv-file" accept=".csv" style="color:white; margin-bottom:10px;">
+            <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync Registry CSV</button>
+            <button onclick="adminSignOut()" style="background: var(--alert); color: white; margin-top:10px; width: 100%;">🚪 Logout</button>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Image+Not+Found'">
-            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
-            <p>Click anywhere to close</p>
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;">
+            <h2 id="gallery-title" style="margin-top: 15px;"></h2>
         </div>
     </div>
 
@@ -120,24 +121,25 @@
         function renderTable(list) {
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             list.forEach(c => {
-                const hasCoords = c.latitude !== null && c.longitude !== null;
-                // FIX: Correct Google Maps URL structure
-                const gMaps = hasCoords ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}` : '#';
+                const lat = parseFloat(c.latitude);
+                const lng = parseFloat(c.longitude);
+                const hasCoords = !isNaN(lat) && !isNaN(lng);
+                const gMaps = hasCoords ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : '#';
                 
                 body.innerHTML += `<tr id="row-${c.id}">
                     <td>
-                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('No coords')`}">
+                        <span class="col-name-link" onclick="deepDiveTrigger('${c.sea_creature}', ${lat}, ${lng}, ${c.id})">
                             🚢 ${c.sea_creature}
                         </span>
                         <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            ${hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'Location Pending'}
+                            ${hasCoords ? `${lat.toFixed(2)}, ${lng.toFixed(2)}` : 'Location Pending'}
                         </a>
                     </td>
                     <td>${c.scientific_name}</td>
                     <td>${c.status}</td>
                     <td>${c.source||'N/A'}</td>
                     <td>
-                        <button class="btn-view" onclick="openGallery('${c.sea_creature}')">🖼️</button>
+                        <button onclick="openGallery('${c.sea_creature}')">🖼️</button>
                         ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
@@ -153,28 +155,63 @@
 
         function plotDiscoveries() {
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
-            currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
-                markers[d.id] = L.marker([d.latitude, d.longitude], { icon: submarineIcon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
+            currentData.forEach(d => {
+                const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
+                    markers[d.id] = L.marker([lat, lng], { icon: submarineIcon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
+                }
             });
         }
 
-        function jumpToMarker(lat, lng, id) {
-            map.flyTo([lat, lng], 4, { animate: true, duration: 1.5 });
-            if (markers[id]) markers[id].openPopup();
+        // --- NEW DEEP DIVE LOGIC ---
+        function deepDiveTrigger(name, lat, lng, id) {
+            if (isNaN(lat) || isNaN(lng)) return alert("Geospatial data pending.");
+            
+            // 1. Move map with cinematic animation
+            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 });
+
+            // 2. Delay the photo appearance to match the map "landing"
+            setTimeout(() => {
+                if (markers[id]) markers[id].openPopup();
+                openGallery(name);
+            }, 2100);
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // FIX: Reliable image fallback engine
             img.src = (creature && creature.image_url) ? creature.image_url : `https://loremflickr.com/600/400/${name},underwater`;
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
         }
-        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
+        async function uploadCSV() {
+            const f = document.getElementById('csv-file').files[0]; if(!f) return;
+            const reader = new FileReader(); reader.onload = async (e) => {
+                const lines = e.target.result.split('\n'), data = [];
+                lines.forEach(l => {
+                    const c = l.split(',');
+                    if (c[0] && c[0].toLowerCase() !== 'sea creature') {
+                        data.push({
+                            sea_creature: c[0].trim(),
+                            scientific_name: c[1]?.trim(),
+                            status: c[2]?.trim(),
+                            source: c[3]?.trim(),
+                            latitude: parseFloat(c[4]), 
+                            longitude: parseFloat(c[5]), 
+                            image_url: c[6]?.trim() || null
+                        });
+                    }
+                });
+                await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
+                loadCreatures();
+            }; reader.readAsText(f);
+        }
+
+        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
         function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
         checkSession();
     </script>
