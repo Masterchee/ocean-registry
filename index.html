@@ -29,7 +29,9 @@
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; transition: background 0.2s; }
+        th:hover { background: rgba(0, 229, 255, 0.1); }
+        td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
         .col-name { cursor: pointer; color: var(--glow); text-decoration: underline dotted; font-weight: bold; }
         .edit-input { width: 90%; padding: 5px; border-radius: 5px; border: 1px solid var(--glow); background: #fff; color: #333; }
@@ -71,10 +73,10 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortData('sea_creature')">🧬 Name (Click Photo)</th>
-                    <th onclick="sortData('scientific_name')">📖 Scientific</th>
-                    <th onclick="sortData('status')">📍 Status</th>
-                    <th onclick="sortData('source')">📋 Source</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name ↕️</th>
+                    <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
+                    <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
+                    <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
                     <th class="admin-only">⚙️ Actions</th>
                 </tr>
             </thead>
@@ -124,7 +126,7 @@
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
         const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], map, markers = [], isAdmin = false;
+        let currentData = [], filteredData = [], map, markers = [], isAdmin = false, sortDirection = {};
 
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
@@ -143,7 +145,7 @@
             document.getElementById('logout-btn').style.display = s ? "block" : "none";
             document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = s ? "block" : "none");
-            renderTable(currentData);
+            renderTable(filteredData);
         }
 
         async function adminSignIn() { 
@@ -158,7 +160,7 @@
         }
 
         async function loadCreatures() {
-            const { data, error } = await sb.from('Sea Creatures').select('*').order('created_at', { ascending: false });
+            const { data, error } = await sb.from('Sea Creatures').select('*');
             if (!error) { 
                 currentData = filteredData = data; 
                 document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`;
@@ -187,18 +189,23 @@
             });
         }
 
+        function sortAlphabetically(column) {
+            sortDirection[column] = !sortDirection[column];
+            filteredData.sort((a, b) => {
+                let valA = (a[column] || "").toString().toLowerCase();
+                let valB = (b[column] || "").toString().toLowerCase();
+                if (valA < valB) return sortDirection[column] ? -1 : 1;
+                if (valA > valB) return sortDirection[column] ? 1 : -1;
+                return 0;
+            });
+            renderTable(filteredData);
+        }
+
         function openGallery(name) {
             const modal = document.getElementById('gallery-modal');
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-
-            // Logic: Use stored URL first, fallback to Unsplash generator if empty
-            if (creature && creature.image_url) {
-                img.src = creature.image_url;
-            } else {
-                img.src = `https://source.unsplash.com/featured/?${name},underwater`;
-            }
-
+            img.src = (creature && creature.image_url) ? creature.image_url : `https://source.unsplash.com/featured/?${name},underwater`;
             document.getElementById('gallery-title').innerText = name;
             modal.style.display = 'block'; 
         }
@@ -210,7 +217,6 @@
             const sci = row.querySelector('.col-sci').innerText;
             const sts = row.querySelector('.col-sts').innerText;
             const src = row.querySelector('.col-src').innerText;
-            
             row.querySelector('.col-sci').innerHTML = `<input type="text" class="edit-input" value="${sci}">`;
             row.querySelector('.col-sts').innerHTML = `<input type="text" class="edit-input" value="${sts}">`;
             row.querySelector('.col-src').innerHTML = `<input type="text" class="edit-input" value="${src}">`;
@@ -220,11 +226,7 @@
         async function saveEdit(id) {
             const row = document.getElementById(`row-${id}`);
             const inputs = row.querySelectorAll('.edit-input');
-            await sb.from('Sea Creatures').update({ 
-                scientific_name: inputs[0].value, 
-                status: inputs[1].value, 
-                source: inputs[2].value 
-            }).eq('id', id);
+            await sb.from('Sea Creatures').update({ scientific_name: inputs[0].value, status: inputs[1].value, source: inputs[2].value }).eq('id', id);
             loadCreatures();
         }
 
@@ -236,8 +238,7 @@
                     const c = l.split(',');
                     if (c[0] && c[0].toLowerCase() !== 'sea creature') data.push({
                         sea_creature: c[0].trim(), scientific_name: c[1]?.trim(), status: c[2]?.trim(), source: c[3]?.trim(),
-                        latitude: parseFloat(c[4])||null, longitude: parseFloat(c[5])||null,
-                        image_url: c[6]?.trim() || null
+                        latitude: parseFloat(c[4])||null, longitude: parseFloat(c[5])||null, image_url: c[6]?.trim() || null
                     });
                 });
                 await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
@@ -260,10 +261,8 @@
         }
 
         async function deleteItem(id) { if(confirm("Delete?")) { await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); } }
-        
         function toggleMap() { 
-            const m = document.getElementById('map'); 
-            m.style.display = m.style.display === "none" ? "block" : "none";
+            const m = document.getElementById('map'); m.style.display = m.style.display === "none" ? "block" : "none";
             if (m.style.display === "block") {
                 if (!map) {
                     map = L.map('map').setView([20, 0], 2);
