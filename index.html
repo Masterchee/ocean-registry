@@ -35,25 +35,28 @@
         #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
 
         /* --- TABLE & MOBILE CARDS --- */
-        .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); }
-        table { width: 100%; border-collapse: collapse; color: #fff; }
+        .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 600px; }
         
-        @media screen and (max-width: 800px) {
+        @media screen and (max-width: 900px) {
             thead { display: none; }
             tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
-            td { display: flex; justify-content: space-between; padding: 8px 5px; border: none; font-size: 0.9em; text-align: right; }
+            td { display: flex; justify-content: space-between; padding: 8px 5px; border: none; font-size: 0.9em; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            td:last-child { border-bottom: none; }
             td::before { content: attr(data-label); font-weight: bold; color: #84ffff; text-transform: uppercase; font-size: 0.75em; text-align: left; }
-            button { width: 100%; margin-top: 5px; }
+            button { width: 48%; margin-top: 5px; }
         }
 
-        @media screen and (min-width: 801px) {
+        @media screen and (min-width: 901px) {
             th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
+            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: 0.3s; }
+            th:hover { background: rgba(0, 184, 212, 0.8); color: #fff; }
             .search-container { flex-direction: row; }
         }
 
         .edit-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; background: white; color: #333; }
         .timestamp { font-size: 0.85em; color: #80deea; font-style: italic; }
+        .source-tag { background: rgba(132, 255, 255, 0.15); padding: 4px 8px; border-radius: 5px; font-size: 0.85em; color: #84ffff; border: 1px solid rgba(132, 255, 255, 0.3); }
 
         .controls { position: relative; z-index: 2; margin-top: 30px; padding: 25px; background: rgba(0, 51, 102, 0.8); border-radius: 20px; border: 1px solid #00b8d4; }
         .auth-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; }
@@ -64,7 +67,7 @@
         .btn-save { background: #00e676; color: white; }
         .btn-export { background: #ffeb3b; color: #333; }
         
-        .input-group label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; }
+        .input-group label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; font-weight: bold; }
         input { width: 100%; padding: 12px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid #00b8d4; border-radius: 10px; color: white; outline: none; box-sizing: border-box; }
     </style>
 </head>
@@ -73,7 +76,7 @@
     <div id="bubble-container"></div>
 
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Research Mode: V3.0 (Source Integrated)</div>
+    <div class="deploy-tag">● Live Data Monitoring System</div>
 
     <div class="dashboard">
         <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
@@ -85,13 +88,13 @@
             <div id="stat-endangered" class="stat-val">0</div>
         </div>
         <div class="stat-card" style="background: rgba(0, 230, 118, 0.2);">
-            <div style="font-size: 0.7em; letter-spacing: 1px;">STABLE</div>
+            <div style="font-size: 0.7em; letter-spacing: 1px;">STABLE/SECURE</div>
             <div id="stat-stable" class="stat-val">0</div>
         </div>
     </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, or source...">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status, or source (e.g., 'IUCN')...">
         <button class="btn-export" onclick="exportToCSV()">📤 Export CSV</button>
     </div>
 
@@ -103,7 +106,7 @@
                     <th onclick="sortData('scientific_name')">📖 Scientific</th>
                     <th onclick="sortData('status')">📍 Status</th>
                     <th onclick="sortData('source')">📋 Source</th>
-                    <th onclick="sortData('created_at')">🕒 Date</th>
+                    <th onclick="sortData('created_at')">🕒 Recorded</th>
                     <th>⚙️ Actions</th>
                 </tr>
             </thead>
@@ -118,17 +121,17 @@
             <input type="password" id="admin-password" placeholder="Password">
             <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Authenticate Admin</button>
         </div>
-        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em; color: #84ffff;">Status: 🌊 Viewing Mode</div>
+        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em; color: #84ffff;">Status: 🌊 Public Viewing Mode</div>
         
         <hr style="margin: 20px 0; opacity: 0.2;">
 
         <div class="input-group">
-            <label>Name</label><input type="text" id="new-common-name" placeholder="e.g. Manta Ray">
-            <label>Scientific</label><input type="text" id="new-scientific-name" placeholder="e.g. Mobula alfredi">
-            <label>Status</label><input type="text" id="new-status" placeholder="e.g. Vulnerable">
-            <label>Source</label><input type="text" id="new-source" placeholder="e.g. IUCN Red List">
+            <label>Sea Creature Name</label><input type="text" id="new-common-name" placeholder="e.g. Whale Shark">
+            <label>Scientific Designation</label><input type="text" id="new-scientific-name" placeholder="e.g. Rhincodon typus">
+            <label>Conservation Status</label><input type="text" id="new-status" placeholder="e.g. Endangered">
+            <label>Data Source</label><input type="text" id="new-source" placeholder="e.g. IUCN Red List">
         </div>
-        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
+        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species to Ledger</button>
 
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
             <h4>🚢 Bulk CSV Import</h4>
@@ -172,8 +175,10 @@
 
         function updateStats(list) {
             document.getElementById('stat-total').innerText = list.length;
-            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status || "").toLowerCase().includes("endangered")).length;
-            document.getElementById('stat-stable').innerText = list.filter(c => (c.status || "").toLowerCase().match(/stable|researching|least concern/)).length;
+            const end = list.filter(c => (c.status || "").toLowerCase().match(/endangered|critical/)).length;
+            const sta = list.filter(c => (c.status || "").toLowerCase().match(/stable|researching|least concern|secure/)).length;
+            document.getElementById('stat-endangered').innerText = end;
+            document.getElementById('stat-stable').innerText = sta;
         }
 
         function renderTable(list) {
@@ -184,8 +189,8 @@
                     <td data-label="Creature" class="col-name">${c.sea_creature || 'Unknown'}</td>
                     <td data-label="Scientific" class="col-science">${c.scientific_name || 'N/A'}</td>
                     <td data-label="Status" class="col-status">${c.status || 'N/A'}</td>
-                    <td data-label="Source" class="col-source">${c.source || 'N/A'}</td>
-                    <td data-label="Date" class="timestamp">${formatDate(c.created_at)}</td>
+                    <td data-label="Source" class="col-source"><span class="source-tag">${c.source || 'N/A'}</span></td>
+                    <td data-label="Recorded" class="timestamp">${formatDate(c.created_at)}</td>
                     <td data-label="Actions" id="actions-${c.id}">
                         <button class="btn-edit" onclick="enterEditMode(${c.id})">✏️</button>
                         <button class="btn-delete" onclick="deleteCreature(${c.id}, '${c.sea_creature}')">🗑</button>
@@ -198,18 +203,18 @@
             const email = document.getElementById('admin-email').value, password = document.getElementById('admin-password').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
             const status = document.getElementById('auth-status');
-            if (error) { status.innerText = "❌ Denied: " + error.message; status.style.color = "#ff5252"; }
-            else { status.innerText = "✅ Authorized Admin"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
+            if (error) { status.innerText = "❌ Login Error: " + error.message; status.style.color = "#ff5252"; }
+            else { status.innerText = "✅ Research Station Unlocked"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
         }
 
         function enterEditMode(id) {
             const row = document.getElementById(`row-${id}`);
-            const name = row.querySelector('.col-name').innerText, sci = row.querySelector('.col-science').innerText, sts = row.querySelector('.col-status').innerText, src = row.querySelector('.col-source').innerText;
+            const name = row.querySelector('.col-name').innerText, sci = row.querySelector('.col-science').innerText, sts = row.querySelector('.col-status').innerText, src = row.querySelector('.source-tag').innerText;
             row.querySelector('.col-name').innerHTML = `<input type="text" class="edit-input" id="edit-name-${id}" value="${name}">`;
             row.querySelector('.col-science').innerHTML = `<input type="text" class="edit-input" id="edit-sci-${id}" value="${sci}">`;
             row.querySelector('.col-status').innerHTML = `<input type="text" class="edit-input" id="edit-sts-${id}" value="${sts}">`;
             row.querySelector('.col-source').innerHTML = `<input type="text" class="edit-input" id="edit-src-${id}" value="${src}">`;
-            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾</button> <button class="btn-delete" onclick="loadCreatures()">❌</button>`;
+            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾 Save</button> <button class="btn-delete" onclick="loadCreatures()">❌ Cancel</button>`;
         }
 
         async function saveEdit(id) {
@@ -219,7 +224,7 @@
                 status: document.getElementById(`edit-sts-${id}`).value,
                 source: document.getElementById(`edit-src-${id}`).value
             }).eq('id', id);
-            if (error) alert("🔒 Admin Authentication Required"); else loadCreatures();
+            if (error) alert("🔒 Authorization Required. Please log in."); else loadCreatures();
         }
 
         async function addNewCreature() {
@@ -229,12 +234,12 @@
                 status: document.getElementById('new-status').value,
                 source: document.getElementById('new-source').value
             }]);
-            if (error) alert("🔒 Login Required"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
+            if (error) alert("🔒 Admin Credentials Required."); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
         async function uploadCSV() {
             const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), bar = document.getElementById('progress-bar'), cont = document.getElementById('progress-container'), txt = document.getElementById('progress-text');
-            if (!file) return alert("Select CSV!");
+            if (!file) return alert("Select a CSV file first.");
             btn.disabled = true; cont.style.display = txt.style.display = "block";
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -242,28 +247,30 @@
                     const rows = e.target.result.split('\n'), data = [];
                     rows.forEach((r, i) => {
                         const cols = r.split(',');
-                        if (cols[0]?.trim()) data.push({ 
-                            sea_creature: cols[0].trim(), 
-                            scientific_name: cols[1]?.trim() || '', 
-                            status: cols[2]?.trim() || '',
-                            source: cols[3]?.trim() || 'CSV Import'
-                        });
-                        bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
+                        if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
+                            data.push({ 
+                                sea_creature: cols[0].trim(), 
+                                scientific_name: cols[1]?.trim() || '', 
+                                status: cols[2]?.trim() || '',
+                                source: cols[3]?.trim() || 'CSV Import'
+                            });
+                        }
+                        bar.style.width = Math.round(((i + 1) / rows.length) * 100) + "%";
                     });
-                    txt.innerText = "Deploying to Ocean...";
+                    txt.innerText = `Deploying ${data.length} species...`;
                     const { error } = await sb.from('Sea Creatures').insert(data);
                     if (error) throw error;
-                    bar.style.width = "100%"; txt.innerText = "Success!"; loadCreatures();
+                    txt.innerText = "Ocean Sync Successful!"; loadCreatures();
                 } catch (err) { alert("❌ Failed: " + err.message); bar.style.backgroundColor = "red"; }
                 finally { setTimeout(() => { btn.disabled = false; cont.style.display = txt.style.display = "none"; bar.style.width = "0%"; }, 3000); }
             };
             reader.readAsText(file);
         }
 
-        async function deleteCreature(id, name) { if (confirm(`Delete ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Admin Restricted"); else loadCreatures(); } }
+        async function deleteCreature(id, name) { if (confirm(`Permanent removal of ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Admin Access Only"); else loadCreatures(); } }
         function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
         function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
-        function exportToCSV() { let csv = "Sea Creature,Science,Status,Source,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry_v3.csv'; a.click(); }
+        function exportToCSV() { let csv = "Sea Creature,Science,Status,Source,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry_v3_1.csv'; a.click(); }
 
         loadCreatures();
     </script>
