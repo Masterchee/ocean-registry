@@ -155,7 +155,7 @@
                         <th class="col-sci" data-sort="scientific_name">📖 Taxonomy ↕️</th>
                         <th class="col-sts" data-sort="status">🛡️ Conservation ↕️</th>
                         <th class="col-src" data-sort="source">📋 Source ↕️</th>
-                        <th class="col-act">⚙️ Visuals</th>
+                        <th class="col-act">⚙️ Search</th>
                     </tr>
                 </thead>
                 <tbody id="registry-body">
@@ -186,7 +186,6 @@
             constructor() {
                 this.DB_URL = 'https://dfuqjromqjmpeeymiejx.supabase.co';
                 this.DB_KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
-                this.UNSPLASH_KEY = 'rwvKG94GLYXrI4AK7n8AEKI5WVrk4jv-gcf8c-TuOLM'; 
                 
                 this.supabase = window.supabase.createClient(this.DB_URL, this.DB_KEY);
                 this.mapInstance = null;
@@ -243,6 +242,7 @@
                     const lng = parseFloat(record.longitude);
 
                     if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+                        // The bold tag now triggers the Google Image Search
                         const popupHTML = `
                             <b onclick="App.requestVisual('${record.sea_creature.replace(/'/g, "\\'")}')">
                                 ${this.getEmoji(record.sea_creature)} ${record.sea_creature}
@@ -324,7 +324,7 @@
                             <td class="col-sts">${record.status}</td>
                             <td class="col-src">${record.source || 'N/A'}</td>
                             <td class="col-act">
-                                <button onclick="App.requestVisual('${safeName}')" title="View Specimen">🖼️</button>
+                                <button onclick="App.requestVisual('${safeName}')" title="Google Image Search">🖼️</button>
                                 ${this.state.isAdmin ? `<button class="btn-danger" onclick="App.deleteRecord(${record.id})" style="margin-left: 5px;">🗑️</button>` : ''}
                             </td>
                         </tr>
@@ -332,29 +332,11 @@
                 }).join('');
             }
 
-            // --- EXTERNAL VISUAL ENGINE ---
-            async requestVisual(name) {
-                const record = this.state.data.find(c => c.sea_creature === name);
-                const dbUrl = record?.image_url;
-
-                if (dbUrl && dbUrl.startsWith('http') && !dbUrl.includes('wikipedia')) {
-                    return window.open(dbUrl, '_blank');
-                }
-                
-                const newTab = window.open('about:blank', '_blank');
-                newTab.document.write(`
-                    <body style="background:#001220; color:#00e5ff; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;">
-                        <h3>🔱 Interfacing with Unsplash Database...</h3>
-                    </body>
-                `);
-                
-                try {
-                    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(name)},underwater&client_id=${this.UNSPLASH_KEY}`);
-                    const data = await res.json();
-                    newTab.location.href = data?.urls?.regular || `https://placehold.co/800x600/001220/00e5ff?text=${encodeURIComponent(name)}+Visual+Pending`;
-                } catch {
-                    newTab.location.href = `https://placehold.co/800x600/001220/00e5ff?text=${encodeURIComponent(name)}+Visual+Pending`;
-                }
+            // --- GOOGLE IMAGE SEARCH ENGINE ---
+            requestVisual(name) {
+                // Instantly opens a new tab directed to Google Images for the specified text
+                const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(name)}`;
+                window.open(googleImagesUrl, '_blank');
             }
 
             // --- UTILITIES & AUTH ---
@@ -404,7 +386,6 @@
                 this.updateAuthUI(false);
             }
 
-            // ROBUST CSV PARSING ENGINE
             async processCSV() {
                 const file = document.getElementById('csv-file').files[0];
                 if (!file) return alert("Select a CSV payload first.");
@@ -414,9 +395,8 @@
                     const lines = e.target.result.split('\n');
                     
                     const payload = lines.slice(1).filter(l => l.trim()).map(l => {
-                        // Regex to split by comma, ignoring commas inside double quotes
                         const cols = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => 
-                            col.trim().replace(/^"|"$/g, '') // Remove wrapping quotes if present
+                            col.trim().replace(/^"|"$/g, '') 
                         );
                         
                         return {
@@ -436,7 +416,7 @@
                         alert("Sync Error: " + error.message);
                     } else {
                         alert("Telemetry Sync Complete.");
-                        document.getElementById('csv-file').value = ''; // Safely reset the input field
+                        document.getElementById('csv-file').value = ''; 
                         this.fetchTelemetry();
                     }
                 };
