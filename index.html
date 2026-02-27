@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Underwater Research Registry 🐚</title>
+    <title>Ocean Research Registry 🐚</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -11,15 +11,15 @@
             font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(180deg, #0077be 0%, #003366 100%);
             background-attachment: fixed; color: #fff; transition: 0.5s;
+            overflow-x: hidden;
         }
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .dark-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        /* Fixed Map Header & Glow Removal */
         #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
         .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Animated Submarine Marker with "Sub-Marker" for identification */
+        /* Animated Submarine Marker */
         .sub-marker {
             background: rgba(0, 229, 255, 0.2);
             border: 2px solid var(--glow);
@@ -37,24 +37,39 @@
             100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); }
         }
 
-        .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
-        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
-        td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
-        
+        /* Popup Styling - Making the name look like a link */
+        .leaflet-popup-content b { cursor: pointer; color: #003366; text-decoration: underline; }
+        .leaflet-popup-content b:hover { color: #0077be; }
+
+        .table-container { 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(12px); 
+            border-radius: 20px; 
+            padding: 15px; 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            overflow: hidden; 
+        }
+        table { width: 100%; border-collapse: collapse; color: #fff; table-layout: fixed; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
+        th { border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
+
+        .col-name { width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-sci { width: 25%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-sts { width: 15%; }
+        .col-src { width: 15%; }
+        .col-act { width: 15%; text-align: right; }
+
         .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
-        .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
+        .coord-link { display: block; font-size: 0.7em; color: var(--glow); text-decoration: none; margin-top: 2px; opacity: 0.7; }
         
-        button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
-        .btn-view { background: #ffeb3b; color: #333; }
+        button { padding: 8px 10px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
         
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(8px); }
-        .admin-only { display: none; }
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">🔱 Underwater Research Registry</h2>
+    <h2 style="text-align: center;">🔱 Ocean Research Registry</h2>
     
     <div style="text-align: center; margin-bottom: 20px;">
         <label style="cursor:pointer;"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"> 🌙 Dark Mode</label>
@@ -63,31 +78,30 @@
     <div id="map"></div>
 
     <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid var(--glow); color:white;">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid var(--glow); color:white; box-sizing: border-box;">
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🐙 Name (Deep Dive) ↕️</th>
-                    <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
-                    <th onclick="sortAlphabetically('status')">🛡️ Status ↕️</th>
-                    <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
-                    <th>⚙️ Actions</th>
+                    <th class="col-name" onclick="sortAlphabetically('sea_creature')">🐙 Name (Map Focus) ↕️</th>
+                    <th class="col-sci" onclick="sortAlphabetically('scientific_name')">📖 Scientific Name ↕️</th>
+                    <th class="col-sts" onclick="sortAlphabetically('status')">🛡️ Status ↕️</th>
+                    <th class="col-src" onclick="sortAlphabetically('source')">📋 Source ↕️</th>
+                    <th class="col-act">⚙️ Actions</th>
                 </tr>
             </thead>
             <tbody id="creature-table-body"></tbody>
         </table>
     </div>
 
-    <div class="controls">
+    <div class="controls" style="margin-top: 25px; background: rgba(0, 51, 102, 0.5); padding: 20px; border-radius: 20px;">
         <div id="login-section">
-            <input type="email" id="admin-email" placeholder="Researcher Email" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px;">
-            <input type="password" id="admin-password" placeholder="Access Key" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px;">
+            <input type="email" id="admin-email" placeholder="Researcher Email" style="width: 100%; margin-bottom: 5px; padding: 10px; border-radius: 8px; border: 1px solid var(--glow); background: rgba(255,255,255,0.1); color: white;">
+            <input type="password" id="admin-password" placeholder="Access Key" style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid var(--glow); background: rgba(255,255,255,0.1); color: white;">
             <button onclick="adminSignIn()" style="width: 100%;">🔑 Admin Login</button>
         </div>
-        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px;">Status: 🌊 Viewing Mode</div>
+        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-top: 10px; text-align: center;">Status: 🌊 Viewing Mode</div>
         
         <div class="admin-only" style="margin-top: 15px;">
-            <hr style="opacity:0.2; margin-bottom:15px;">
             <input type="file" id="csv-file" accept=".csv" style="color:white; margin-bottom:10px;">
             <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync Registry CSV</button>
             <button onclick="adminSignOut()" style="background: var(--alert); color: white; margin-top:10px; width: 100%;">🚪 Logout</button>
@@ -96,8 +110,9 @@
 
     <div id="gallery-modal" onclick="closeGallery()">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Image+Not+Found'">
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Specimen+Visual+Pending'">
             <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
+            <p style="font-size: 0.8em; opacity: 0.7;">Click anywhere to surface</p>
         </div>
     </div>
 
@@ -139,24 +154,22 @@
             list.forEach(c => {
                 const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude);
                 const hasCoords = !isNaN(lat) && !isNaN(lng);
-                
-                // FIXED: Direct values prevents the "brace 404" from screenshot image_3503e2.png
-                const gMaps = hasCoords ? "http://googleusercontent.com/maps.google.com/6" + lat + "," + lng : "#";
+                const gMaps = hasCoords ? "http://googleusercontent.com/maps.google.com/search?q=" + lat + "," + lng : "#";
                 
                 body.innerHTML += `<tr id="row-${c.id}">
-                    <td>
-                        <span class="col-name-link" onclick="deepDiveTrigger('${c.sea_creature.replace(/'/g, "\\'")}', ${lat}, ${lng}, ${c.id})">
-                            🚢 ${c.sea_creature}
+                    <td class="col-name">
+                        <span class="col-name-link" onclick="focusOnMap(${lat}, ${lng}, ${c.id})">
+                            ${c.sea_creature}
                         </span>
                         <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            ${hasCoords ? lat.toFixed(2) + ", " + lng.toFixed(2) : 'Location Pending'}
+                            ${hasCoords ? "coordinates: " + lat.toFixed(2) + ", " + lng.toFixed(2) : 'No Location Data'}
                         </a>
                     </td>
-                    <td>${c.scientific_name}</td>
-                    <td>${c.status}</td>
-                    <td>${c.source||'N/A'}</td>
-                    <td>
-                        <button class="btn-view" onclick="openGallery('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
+                    <td class="col-sci">${c.scientific_name}</td>
+                    <td class="col-sts">${c.status}</td>
+                    <td class="col-src">${c.source||'N/A'}</td>
+                    <td class="col-act">
+                        <button onclick="openGallery('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
                         ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
@@ -174,32 +187,43 @@
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.forEach(d => {
                 const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
-                // Strict validation ensures no jumping
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    const submarineIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30] });
-                    // Fixed: and stay center means use map.flyTo, so don't center here.
-                    markers[d.id] = L.marker([lat, lng], { icon: submarineIcon }).bindPopup("<b>" + d.sea_creature + "</b>").addTo(map);
+                if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+                    const subIcon = L.divIcon({ 
+                        className: 'sub-marker', 
+                        html: '<span style="font-size:1.2em;">🚢</span>', 
+                        iconSize: [30, 30],
+                        popupAnchor: [0, -15]
+                    });
+                    
+                    // MODIFIED POPUP: The name is now a link that calls openGallery
+                    const popupContent = `
+                        <b onclick="openGallery('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
+                        coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
+                        <small>(Click name for photo)</small>
+                    `;
+                    
+                    markers[d.id] = L.marker([lat, lng], { icon: subIcon })
+                        .bindPopup(popupContent)
+                        .addTo(map);
                 }
             });
         }
 
-        function deepDiveTrigger(name, lat, lng, id) {
-            // FIX: Numerical guard prevents submarine jumping to top-left
-            if (isNaN(lat) || isNaN(lng)) return alert("Geospatial data pending.");
-            
-            map.flyTo([lat, lng], 8, { animate: true, duration: 2.0 }); /* Cinematic Zoom */
+        function focusOnMap(lat, lng, id) {
+            if (isNaN(lat) || isNaN(lng)) return;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            map.flyTo([lat, lng], 7, { animate: true, duration: 1.5 });
             setTimeout(() => {
                 if (markers[id]) markers[id].openPopup();
-                openGallery(name);
-            }, 2100);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 1600);
         }
 
         function openGallery(name) {
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
-            // FIX: Using reliable image engine LoremFlickr
-            img.src = (creature && creature.image_url) ? creature.image_url : "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater";
+            // RELIABLE IMAGE ENGINE: Switches to LoremFlickr for keyword marine search
+            const fallback = "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater/all";
+            img.src = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
             document.getElementById('gallery-title').innerText = name;
             document.getElementById('gallery-modal').style.display = 'block'; 
         }
@@ -217,7 +241,7 @@
                             status: c[2]?.trim(),
                             source: c[3]?.trim(),
                             latitude: parseFloat(c[4]), 
-                            longitude: parseFloat(c[5]), 
+                            longitude: parseFloat(c[5]),
                             image_url: c[6]?.trim() || null
                         });
                     }
@@ -228,7 +252,8 @@
         }
 
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
-        function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
+        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(val))); renderTable(filteredData); }
         checkSession();
     </script>
 </body>
