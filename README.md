@@ -72,8 +72,8 @@ git clone https://github.com/Masterchee/ocean-registry.git
 3. **Link Credentials:**
 Update the `_URL` and `_KEY` constants in your `<script>` tag:
 ```javascript
-const _URL = '[https://dfuqjromqjmpeeymiejx.supabase.co)';
-const _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
+const _URL = https://dfuqjromqjmpeeymiejx.supabase.co
+const _KEY = sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX
 
 ```
 
