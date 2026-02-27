@@ -7,41 +7,44 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* --- BASE THEME & DEEP SEA MODE --- */
+        /* --- THEME SYSTEM --- */
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 20px; min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(180deg, #0077be 0%, #003366 100%);
             background-attachment: fixed; color: #fff; transition: 0.5s;
         }
-        :root { --glow: #00e5ff; }
+        :root { --glow: #00e5ff; --alert: #ff5252; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         .deep-sea-mode .table-container, .deep-sea-mode .stat-card, .deep-sea-mode .controls {
             background: rgba(0, 0, 0, 0.8) !important; border: 1px solid var(--glow) !important; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
-        /* --- MAP & PULSE --- */
+        /* --- MAP & ALERTS --- */
         #map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; }
         .glow-marker { background: var(--glow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--glow); animation: mapPulse 2s infinite; }
         @keyframes mapPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+        
+        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
+        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid var(--alert) !important; }
 
-        /* --- UI COMPONENTS --- */
+        /* --- UI ELEMENTS --- */
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .col-name { cursor: pointer; text-decoration: underline dotted var(--glow); }
-        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid #ff5252 !important; }
-        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
         
+        /* CLICKABLE NAME FOR GALLERY */
+        .col-name { cursor: pointer; color: var(--glow); text-decoration: underline dotted; font-weight: bold; }
+        .col-name:hover { text-shadow: 0 0 10px var(--glow); }
+
         .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
         input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
         button { padding: 10px 20px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
         
-        /* Modal */
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        /* Modal Gallery */
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; backdrop-filter: blur(5px); }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; vertical-align: middle; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #003366; transition: .4s; border-radius: 20px; border: 1px solid var(--glow); }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
@@ -50,27 +53,28 @@
 </head>
 <body>
 
-    <h2 style="margin-bottom: 0;">🔱 Sea Creatures Registry</h2>
+    <h2 style="text-align: center;">🔱 Underwater Research Registry</h2>
+    
     <div style="text-align: center; margin-bottom: 20px;">
+        <button onclick="toggleMap()" style="background: none; border: 1px solid var(--glow); color: var(--glow); margin-right: 15px;">🛰️ Discovery Map</button>
         <label class="switch"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"><span class="slider"></span></label>
-        <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 10px;">DEEP SEA MODE</span>
+        <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 5px;">DEEP SEA MODE</span>
     </div>
 
     <div class="dashboard">
-        <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea;">Last Sync: Never</div>
-        <button onclick="toggleMap()" style="position: absolute; left: 0; top: -35px; background: none; color: var(--glow); border: 1px solid var(--glow); padding: 5px 15px;">🛰️ Toggle Map</button>
+        <div id="sync-timestamp" style="position: absolute; right: 0; top: -20px; font-size: 0.7em; opacity: 0.7;">Last Sync: Never</div>
         <div class="stat-card"><div>SPECIES</div><div id="stat-total" style="font-size: 1.5em; font-weight: bold;">0</div></div>
-        <div class="stat-card" style="border-color: #ff5252;"><div>CRITICAL</div><div id="stat-endangered" style="font-size: 1.5em; font-weight: bold; color: #ff5252;">0</div></div>
+        <div class="stat-card" style="border-color: var(--alert);"><div>CRITICAL</div><div id="stat-endangered" style="font-size: 1.5em; font-weight: bold; color: var(--alert);">0</div></div>
     </div>
 
     <div id="map"></div>
 
     <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%;">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status..." style="margin-bottom: 15px;">
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortData('sea_creature')">🧬 Name</th>
+                    <th onclick="sortData('sea_creature')">🧬 Name (Click for Photo)</th>
                     <th onclick="sortData('scientific_name')">📖 Scientific</th>
                     <th onclick="sortData('status')">📍 Status</th>
                     <th onclick="sortData('source')">📋 Source</th>
@@ -83,34 +87,35 @@
 
     <div class="controls">
         <div id="login-section" style="margin-bottom: 20px;">
-            <input type="email" id="admin-email" placeholder="Email">
-            <input type="password" id="admin-password" placeholder="Key">
-            <button onclick="adminSignIn()" style="width: 100%; margin-top: 10px;">🔑 Login</button>
+            <input type="email" id="admin-email" placeholder="Researcher Email">
+            <input type="password" id="admin-password" placeholder="Access Key">
+            <button onclick="adminSignIn()" style="width: 100%; margin-top: 10px;">🔑 Admin Login</button>
         </div>
-        <div id="auth-status" style="font-size: 0.8em; color: #84ffff; margin-bottom: 10px;">Status: 🌊 Viewing</div>
-        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: #ff5252; color: white;">🚪 Logout</button>
+        <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-bottom: 10px;">Status: 🌊 Viewing Mode</div>
+        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: var(--alert); color: white;">🚪 Secure Logout</button>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-            <input type="text" id="new-common-name" placeholder="Name">
-            <input type="text" id="new-scientific-name" placeholder="Scientific">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <input type="text" id="new-common-name" placeholder="Common Name">
+            <input type="text" id="new-scientific-name" placeholder="Scientific Name">
             <input type="text" id="new-status" placeholder="Status">
             <input type="text" id="new-source" placeholder="Source">
-            <input type="number" id="new-lat" placeholder="Latitude (e.g. 31.0)" step="any">
-            <input type="number" id="new-lng" placeholder="Longitude (e.g. -114.8)" step="any">
+            <input type="number" id="new-lat" placeholder="Latitude" step="any">
+            <input type="number" id="new-lng" placeholder="Longitude" step="any">
         </div>
         <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
 
         <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-            <h4>🚢 Bulk CSV Sync (Name, Science, Status, Source, Lat, Lng)</h4>
+            <h4>🚢 Bulk CSV Sync</h4>
             <input type="file" id="csv-file" accept=".csv">
-            <button onclick="uploadCSV()" style="background: #00e676; margin-top: 10px; width: 100%;">📥 Sync Data</button>
+            <button onclick="uploadCSV()" style="background: #00e676; margin-top: 10px; width: 100%;">📥 Sync Registry</button>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 500px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 15px; border: 2px solid var(--glow);">
-            <h3 id="gallery-title" style="color: #fff; margin-top: 10px;"></h3>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); box-shadow: 0 0 30px var(--glow);">
+            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 2px 2px 5px #000;"></h2>
+            <p>Click anywhere to close</p>
         </div>
     </div>
 
@@ -118,46 +123,37 @@
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
         const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], sortOrder = true, map, markers = [];
+        let currentData = [], filteredData = [], map, markers = [];
 
+        // --- THEME & SESSION ---
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
-            if (localStorage.getItem('ocean-theme') === 'deep') { document.getElementById('theme-toggle').checked = true; document.body.classList.add('deep-sea-mode'); }
+            if (localStorage.getItem('ocean-theme') === 'deep') { 
+                document.getElementById('theme-toggle').checked = true; 
+                document.body.classList.add('deep-sea-mode'); 
+            }
         }
         sb.auth.onAuthStateChange((_, s) => updateUI(s));
         function updateUI(s) {
             document.getElementById('login-section').style.display = s ? "none" : "block";
             document.getElementById('logout-btn').style.display = s ? "block" : "none";
-            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing";
+            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing Mode";
         }
-        async function adminSignIn() { const e = document.getElementById('admin-email').value, p = document.getElementById('admin-password').value; await sb.auth.signInWithPassword({ email: e, password: p }); }
+        async function adminSignIn() { 
+            const e = document.getElementById('admin-email').value, p = document.getElementById('admin-password').value; 
+            await sb.auth.signInWithPassword({ email: e, password: p }); 
+        }
         async function adminSignOut() { await sb.auth.signOut(); location.reload(); }
-        function toggleTheme() { const d = document.getElementById('theme-toggle').checked; document.body.classList.toggle('deep-sea-mode', d); localStorage.setItem('ocean-theme', d ? 'deep' : 'light'); }
-
-        async function loadCreatures() {
-            const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (!error) { currentData = filteredData = data; renderTable(data); if(map) plotDiscoveries(); }
+        function toggleTheme() { 
+            const d = document.getElementById('theme-toggle').checked; 
+            document.body.classList.toggle('deep-sea-mode', d); 
+            localStorage.setItem('ocean-theme', d ? 'deep' : 'light'); 
         }
 
-        function renderTable(list) {
-            const body = document.getElementById('creature-table-body'); body.innerHTML = '';
-            document.getElementById('stat-total').innerText = list.length;
-            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
-            list.forEach(c => {
-                const isCrit = (c.status||"").toLowerCase().includes("critically endangered");
-                body.innerHTML += `<tr class="${isCrit ? 'alert-critical' : ''}">
-                    <td class="col-name" onclick="openGallery('${c.sea_creature}')">${c.sea_creature}</td>
-                    <td>${c.scientific_name}</td>
-                    <td>${c.status}</td>
-                    <td><span style="font-size: 0.8em; opacity: 0.7;">${c.source||'N/A'}</span></td>
-                    <td><button onclick="deleteItem(${c.id})" style="background:#ff5252; padding: 5px 10px;">🗑</button></td>
-                </tr>`;
-            });
-        }
-
-        function toggleMap() { 
-            const m = document.getElementById('map'); 
+        // --- MAP LOGIC ---
+        function toggleMap() {
+            const m = document.getElementById('map');
             m.style.display = m.style.display === "none" ? "block" : "none";
             if (m.style.display === "block") {
                 if (!map) {
@@ -167,16 +163,50 @@
                 setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
             }
         }
-
         function plotDiscoveries() {
             markers.forEach(m => map.removeLayer(m)); markers = [];
             currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                const icon = L.divIcon({ className: 'glow-marker', iconSize: [10, 10] });
+                const icon = L.divIcon({ className: 'glow-marker', iconSize: [12, 12] });
                 const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
                 markers.push(m);
             });
         }
 
+        // --- DATA LOGIC ---
+        async function loadCreatures() {
+            const { data, error } = await sb.from('Sea Creatures').select('*');
+            if (!error) { currentData = filteredData = data; renderTable(data); if(map) plotDiscoveries(); }
+        }
+
+        function renderTable(list) {
+            const body = document.getElementById('creature-table-body'); body.innerHTML = '';
+            document.getElementById('stat-total').innerText = list.length;
+            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
+            
+            list.forEach(c => {
+                const isCrit = (c.status||"").toLowerCase().includes("critically endangered");
+                body.innerHTML += `<tr class="${isCrit ? 'alert-critical' : ''}">
+                    <td class="col-name" onclick="openGallery('${c.sea_creature}')">${c.sea_creature}</td>
+                    <td>${c.scientific_name}</td>
+                    <td>${c.status}</td>
+                    <td><span style="font-size: 0.8em; opacity: 0.8;">${c.source||'N/A'}</span></td>
+                    <td><button onclick="deleteItem(${c.id})" style="background:var(--alert); padding: 5px 10px;">🗑</button></td>
+                </tr>`;
+            });
+        }
+
+        // --- GALLERY ---
+        function openGallery(name) {
+            const modal = document.getElementById('gallery-modal');
+            const img = document.getElementById('gallery-img');
+            // Fetch relevant image from Unsplash automatically
+            img.src = `https://source.unsplash.com/featured/?${name},underwater`;
+            document.getElementById('gallery-title').innerText = name;
+            modal.style.display = 'block';
+        }
+        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
+
+        // --- ACTIONS ---
         async function uploadCSV() {
             const f = document.getElementById('csv-file').files[0]; if(!f) return;
             const reader = new FileReader(); reader.onload = async (e) => {
@@ -207,9 +237,7 @@
             loadCreatures();
         }
 
-        async function deleteItem(id) { if(confirm("Delete?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
-        function openGallery(n) { document.getElementById('gallery-img').src = `https://images.unsplash.com/photo-1582967788606-a171c1080cb0?w=500`; document.getElementById('gallery-title').innerText = n; document.getElementById('gallery-modal').style.display = 'block'; }
-        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
+        async function deleteItem(id) { if(confirm("Permanently delete record?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
         function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(s => s?.toString().toLowerCase().includes(v))); renderTable(filteredData); }
 
         checkSession(); loadCreatures();
