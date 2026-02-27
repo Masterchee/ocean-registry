@@ -15,11 +15,25 @@
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
         
-        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; background: #001220; z-index: 1; }
+        /* Map Always Visible - Removed Top Left Glow Icon */
+        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; }
         
-        /* Pulse for Critical Rows */
-        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
-        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid var(--alert) !important; }
+        /* Submarine Icon Styling and Pulse */
+        .sub-marker {
+            background: rgba(0, 229, 255, 0.2);
+            border: 2px solid var(--glow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: subPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes subPulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 229, 255, 0.5); }
+            50% { transform: scale(1.15); box-shadow: 0 0 20px rgba(0, 229, 255, 1); }
+            100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 229, 255, 0.5); }
+        }
 
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
@@ -29,34 +43,32 @@
         th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         
-        /* Coordinate Text Link */
-        .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.8; }
-        .coord-link:hover { text-decoration: underline; opacity: 1; }
-        .col-name-link { cursor: pointer; color: #fff; font-weight: bold; }
+        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
+        .coord-link { display: block; font-size: 0.75em; color: var(--glow); text-decoration: none; margin-top: 4px; opacity: 0.7; }
         
         .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
         input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
         
-        button { padding: 8px 15px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        .btn-view { background: #ffeb3b; color: #333; margin-right: 5px; }
+        button { padding: 8px 12px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-right: 4px; }
+        .btn-view { background: #ffeb3b; color: #333; }
+        .btn-del { background: var(--alert); color: white; }
         
         #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; backdrop-filter: blur(5px); }
-        
+        .admin-only { display: none; }
+
+        .switch-container { text-align: center; margin-bottom: 20px; }
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; vertical-align: middle; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #003366; transition: .4s; border-radius: 20px; border: 1px solid var(--glow); }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider:before { transform: translateX(20px); }
-        
-        .admin-only { display: none; }
     </style>
 </head>
 <body>
 
     <h2 style="text-align: center;">🔱 Underwater Research Registry</h2>
     
-    <div style="text-align: center; margin-bottom: 20px;">
-        <button onclick="toggleMap()" style="background: none; border: 1px solid var(--glow); color: var(--glow); margin-right: 15px;">🛰️ Discovery Map</button>
+    <div class="switch-container">
         <label class="switch"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"><span class="slider"></span></label>
         <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 5px;">DEEP SEA MODE</span>
     </div>
@@ -68,7 +80,7 @@
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Discovery Context) ↕️</th>
+                    <th onclick="sortAlphabetically('sea_creature')">🧬 Name (Click for Map) ↕️</th>
                     <th onclick="sortAlphabetically('scientific_name')">📖 Scientific ↕️</th>
                     <th onclick="sortAlphabetically('status')">📍 Status ↕️</th>
                     <th onclick="sortAlphabetically('source')">📋 Source ↕️</th>
@@ -121,6 +133,7 @@
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
             loadCreatures();
+            initMap();
         }
         sb.auth.onAuthStateChange((_, s) => updateUI(s));
         
@@ -141,81 +154,90 @@
 
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (!error) { 
-                currentData = filteredData = data; 
-                renderTable(data); 
-                if(map) plotDiscoveries(); 
-            }
+            if (!error) { currentData = filteredData = data; renderTable(data); plotDiscoveries(); }
         }
 
         function renderTable(list) {
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             list.forEach(c => {
                 const hasCoords = c.latitude && c.longitude;
-                const coordDisplay = hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'Location Pending';
-                const googleMapsUrl = hasCoords ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}` : '#';
-                
-                body.innerHTML += `<tr>
+                const gMaps = hasCoords ? `http://googleusercontent.com/maps.google.com/2{c.latitude},${c.longitude}` : '#';
+                body.innerHTML += `<tr id="row-${c.id}">
                     <td>
-                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('Geospatial data unavailable.')`}">
+                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('No coords')`}">
                             ${c.sea_creature}
                         </span>
-                        <a href="${googleMapsUrl}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
-                            📍 ${coordDisplay}
+                        <a href="${gMaps}" target="_blank" class="coord-link" onclick="event.stopPropagation();">
+                            ${hasCoords ? `${c.latitude.toFixed(2)}, ${c.longitude.toFixed(2)}` : 'N/A'}
                         </a>
                     </td>
-                    <td>${c.scientific_name}</td>
-                    <td>${c.status}</td>
-                    <td>${c.source||'N/A'}</td>
-                    <td>
-                        <button class="btn-view" onclick="openGallery('${c.sea_creature}')">🖼️ Photo</button>
-                        ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
+                    <td class="col-sci">${c.scientific_name}</td>
+                    <td class="col-sts">${c.status}</td>
+                    <td class="col-src">${c.source||'N/A'}</td>
+                    <td id="actions-${c.id}">
+                        <button class="btn-view" onclick="openGallery('${c.sea_creature}')">🖼️</button>
+                        ${isAdmin ? `
+                            <button onclick="enterEdit(${c.id})">✏️</button>
+                            <button class="btn-del" onclick="deleteItem(${c.id})">🗑</button>
+                        ` : ''}
                     </td>
                 </tr>`;
             });
         }
 
-        function toggleMap() { 
-            const m = document.getElementById('map'); 
-            m.style.display = m.style.display === "none" ? "block" : "none";
-            if (m.style.display === "block") {
-                if (!map) {
-                    map = L.map('map').setView([20, 0], 2); 
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-                }
-                setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
+        function initMap() {
+            if (!map) {
+                map = L.map('map').setView([20, 0], 2); 
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
         }
 
         function plotDiscoveries() {
             Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
             currentData.filter(c => c.latitude && c.longitude).forEach(d => {
-                // Invisible icons used for logic only, no blue glow displayed
-                const icon = L.divIcon({ className: 'hidden-marker', iconSize: [0, 0] });
-                const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
-                markers[d.id] = m;
+                // Custom Submarine Icon
+                const submarineIcon = L.divIcon({
+                    className: 'sub-marker',
+                    html: '<span style="font-size:1.4em;">🚢</span>', // Using a ship emoji as a submarine stand-in
+                    iconSize: [35, 35],
+                    popupAnchor: [0, -15]
+                });
+                markers[d.id] = L.marker([d.latitude, d.longitude], { icon: submarineIcon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
             });
         }
 
         function jumpToMarker(lat, lng, id) {
-            if (document.getElementById('map').style.display === "none") toggleMap();
-            setTimeout(() => {
-                map.flyTo([lat, lng], 4, { animate: true, duration: 1.5 });
-                if (markers[id]) markers[id].openPopup();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 300);
+            map.flyTo([lat, lng], 4, { animate: true, duration: 1.5 });
+            if (markers[id]) markers[id].openPopup();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openGallery(name) {
-            const modal = document.getElementById('gallery-modal');
             const img = document.getElementById('gallery-img');
             const creature = currentData.find(c => c.sea_creature === name);
             img.src = (creature && creature.image_url) ? creature.image_url : `https://source.unsplash.com/featured/?${name},underwater`;
             document.getElementById('gallery-title').innerText = name;
-            modal.style.display = 'block'; 
+            document.getElementById('gallery-modal').style.display = 'block'; 
         }
         function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
+        function enterEdit(id) {
+            const row = document.getElementById(`row-${id}`);
+            const sci = row.querySelector('.col-sci').innerText, sts = row.querySelector('.col-sts').innerText, src = row.querySelector('.col-src').innerText;
+            row.querySelector('.col-sci').innerHTML = `<input type="text" class="edit-input" value="${sci}">`;
+            row.querySelector('.col-sts').innerHTML = `<input type="text" class="edit-input" value="${sts}">`;
+            row.querySelector('.col-src').innerHTML = `<input type="text" class="edit-input" value="${src}">`;
+            document.getElementById(`actions-${id}`).innerHTML = `<button onclick="saveEdit(${id})" style="background:var(--save); color:white;">💾</button> <button onclick="loadCreatures()">❌</button>`;
+        }
+
+        async function saveEdit(id) {
+            const inputs = document.getElementById(`row-${id}`).querySelectorAll('input');
+            await sb.from('Sea Creatures').update({ scientific_name: inputs[0].value, status: inputs[1].value, source: inputs[2].value }).eq('id', id);
+            loadCreatures();
+        }
+
+        async function deleteItem(id) { if(confirm("Delete?")) { await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); } }
+        function toggleTheme() { document.body.classList.toggle('deep-sea-mode'); }
         checkSession();
     </script>
 </body>
