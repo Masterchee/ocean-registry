@@ -249,28 +249,87 @@
             if (error) alert("🔒 Login Required"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
-        async function uploadCSV() {
-            const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), bar = document.getElementById('progress-bar'), cont = document.getElementById('progress-container'), txt = document.getElementById('progress-text');
-            if (!file) return alert("Select file!");
-            btn.disabled = true; cont.style.display = txt.style.display = "block";
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const rows = e.target.result.split('\n'), data = [];
-                    rows.forEach((r, i) => {
-                        const cols = r.split(',');
-                        if (cols[0]?.trim()) data.push({ sea_creature: cols[0].trim(), scientific_name: cols[1]?.trim() || '', status: cols[2]?.trim() || '' });
-                        bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
+async function uploadCSV() {
+    const fileInput = document.getElementById('csv-file');
+    const file = fileInput.files[0];
+    const btn = document.getElementById('csv-btn');
+    const bar = document.getElementById('progress-bar');
+    const txt = document.getElementById('progress-text');
+
+    // Diagnostic 1: Check if file is selected
+    if (!file) {
+        alert("⚠️ No file selected. Please browse for a CSV file first.");
+        return;
+    }
+
+    console.log("File detected:", file.name);
+    btn.disabled = true;
+    btn.innerText = "⏳ Processing...";
+    
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        try {
+            console.log("File read successfully. Parsing content...");
+            const text = e.target.result;
+            const rows = text.split(/\r?\n/); // Improved splitting for different OS formats
+            const dataToInsert = [];
+
+            rows.forEach((row, i) => {
+                const cols = row.split(',');
+                // Ensure we have a name and it's not a header row
+                if (cols[0] && cols[0].trim() && cols[0].toLowerCase() !== "sea creature") {
+                    dataToInsert.push({
+                        sea_creature: cols[0].trim(),
+                        scientific_name: cols[1]?.trim() || '',
+                        status: cols[2]?.trim() || ''
                     });
-                    txt.innerText = "Deploying...";
-                    const { error } = await sb.from('Sea Creatures').insert(data);
-                    if (error) throw error;
-                    bar.style.width = "100%"; txt.innerText = "Success!"; loadCreatures();
-                } catch (err) { alert(err.message); bar.style.backgroundColor = "red"; }
-                finally { setTimeout(() => { btn.disabled = false; cont.style.display = txt.style.display = "none"; bar.style.width = "0%"; }, 2000); }
-            };
-            reader.readAsText(file);
+                }
+            });
+
+            console.log("Prepared data:", dataToInsert);
+
+            if (dataToInsert.length === 0) {
+                throw new Error("The CSV file appears to be empty or formatted incorrectly.");
+            }
+
+            // Show Progress UI
+            cont.style.display = txt.style.display = "block";
+            txt.innerText = `🚀 Deploying ${dataToInsert.length} creatures...`;
+
+            // --- THE CRITICAL STEP: SUPABASE INSERT ---
+            const { data, error } = await sb.from('Sea Creatures').insert(dataToInsert);
+
+            if (error) {
+                console.error("Supabase Error:", error);
+                throw new Error(`Supabase says: ${error.message}`);
+            }
+
+            alert(`✅ Success! ${dataToInsert.length} species have reached the ocean floor.`);
+            loadCreatures(); // Refresh the table
+            fileInput.value = ''; // Reset the file picker
+
+        } catch (err) {
+            console.error("Full Error Object:", err);
+            alert("❌ Deployment Failed:\n" + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "📥 Deploy CSV Data";
+            // Hide progress after a delay
+            setTimeout(() => {
+                if(txt) txt.style.display = "none";
+                if(cont) cont.style.display = "none";
+            }, 3000);
         }
+    };
+
+    reader.onerror = () => {
+        alert("❌ Browser Error: Could not read the file.");
+        btn.disabled = false;
+    };
+
+    reader.readAsText(file);
+}
 
         async function deleteCreature(id, name) { if (confirm(`Delete ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Admin Restricted"); else loadCreatures(); } }
         function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
@@ -281,3 +340,4 @@
     </script>
 </body>
 </html>
+
