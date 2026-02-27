@@ -19,7 +19,6 @@
         #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); background: #001220; z-index: 1; position: relative; }
         .leaflet-top.leaflet-left { display: none !important; } 
 
-        /* Animated Submarine Marker */
         .sub-marker {
             background: rgba(0, 229, 255, 0.2);
             border: 2px solid var(--glow);
@@ -37,15 +36,13 @@
             100% { transform: scale(1); box-shadow: 0 0 5px var(--glow); }
         }
 
-        /* Popup Styling - Link-style name */
         .leaflet-popup-content b { cursor: pointer; color: #003366; text-decoration: underline; }
         .leaflet-popup-content b:hover { color: #0077be; }
 
         .table-container { 
             background: rgba(255, 255, 255, 0.1); 
             backdrop-filter: blur(12px); 
-            border-radius: 20px; 
-            padding: 15px; 
+            border-radius: 20px; padding: 15px; 
             border: 1px solid rgba(255, 255, 255, 0.2); 
             overflow: hidden; 
         }
@@ -109,6 +106,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
+        const _UNSPLASH_KEY = 'YOUR_UNSPLASH_ACCESS_KEY'; // Replace with your key
         const sb = window.supabase.createClient(_URL, _KEY);
         let currentData = [], filteredData = [], map, markers = {}, isAdmin = false;
 
@@ -178,22 +176,9 @@
             currentData.forEach(d => {
                 const lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
                 if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
-                    const subIcon = L.divIcon({ 
-                        className: 'sub-marker', 
-                        html: '<span style="font-size:1.2em;">🚢</span>', 
-                        iconSize: [30, 30],
-                        popupAnchor: [0, -15]
-                    });
-                    
-                    const popupContent = `
-                        <b onclick="viewImageExternal('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
-                        coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
-                        <small>(Click name to open photo in new tab)</small>
-                    `;
-                    
-                    markers[d.id] = L.marker([lat, lng], { icon: subIcon })
-                        .bindPopup(popupContent)
-                        .addTo(map);
+                    const subIcon = L.divIcon({ className: 'sub-marker', html: '🚢', iconSize: [30, 30], popupAnchor: [0, -15] });
+                    const popupContent = `<b onclick="viewImageExternal('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    markers[d.id] = L.marker([lat, lng], { icon: subIcon }).bindPopup(popupContent).addTo(map);
                 }
             });
         }
@@ -202,21 +187,34 @@
             if (isNaN(lat) || isNaN(lng)) return;
             window.scrollTo({ top: 0, behavior: 'smooth' });
             map.flyTo([lat, lng], 7, { animate: true, duration: 1.5 });
-            setTimeout(() => {
-                if (markers[id]) markers[id].openPopup();
-            }, 1600);
+            setTimeout(() => { if (markers[id]) markers[id].openPopup(); }, 1600);
         }
 
-        // REPAIRED: Resolves URL and opens in new tab to bypass modal errors
-        function viewImageExternal(name) {
+        // OFFICIAL UNSPLASH API LOGIC
+        async function viewImageExternal(name) {
             const creature = currentData.find(c => c.sea_creature === name);
-            const fallback = "https://loremflickr.com/800/600/" + encodeURIComponent(name) + ",underwater/all";
-            let imageUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
-            
-            // Wikipedia fix: ensures full resolution or direct link if URL is broken
-            if (imageUrl.includes('wikipedia')) imageUrl = fallback;
+            const dbUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : null;
 
-            window.open(imageUrl, '_blank');
+            // If we have a working DB link, use it immediately
+            if (dbUrl && !dbUrl.includes('wikipedia')) return window.open(dbUrl, '_blank');
+
+            // Otherwise, open a temporary tab and fetch from official Unsplash API
+            const newTab = window.open('about:blank', '_blank');
+            newTab.document.write('<p style="font-family:sans-serif; text-align:center; margin-top:20%;">🔱 Sourcing High-Resolution Specimen Visuals...</p>');
+
+            try {
+                const response = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(name)},underwater&client_id=${_UNSPLASH_KEY}`);
+                const data = await response.json();
+                
+                if (data.urls && data.urls.regular) {
+                    newTab.location.href = data.urls.regular;
+                } else {
+                    throw new Error("No image found");
+                }
+            } catch (err) {
+                // Final fallback if API limit is reached or fails
+                newTab.location.href = `https://placehold.co/800x600?text=${encodeURIComponent(name)}+Visual+Pending`;
+            }
         }
 
         async function uploadCSV() {
