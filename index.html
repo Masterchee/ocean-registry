@@ -76,7 +76,7 @@
     <div id="bubble-container"></div>
 
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Live Data Monitoring System</div>
+    <div class="deploy-tag">● Live Data Monitoring System - V3.2 (Smart Upsert)</div>
 
     <div class="dashboard">
         <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
@@ -94,7 +94,7 @@
     </div>
     
     <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status, or source (e.g., 'IUCN')...">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search name, science, status, or source...">
         <button class="btn-export" onclick="exportToCSV()">📤 Export CSV</button>
     </div>
 
@@ -121,26 +121,26 @@
             <input type="password" id="admin-password" placeholder="Password">
             <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Authenticate Admin</button>
         </div>
-        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em; color: #84ffff;">Status: 🌊 Public Viewing Mode</div>
+        <div id="auth-status" style="margin-bottom:15px; font-weight:bold; font-size: 0.9em; color: #84ffff;">Status: 🌊 Viewing Mode</div>
         
         <hr style="margin: 20px 0; opacity: 0.2;">
 
         <div class="input-group">
-            <label>Sea Creature Name</label><input type="text" id="new-common-name" placeholder="e.g. Whale Shark">
-            <label>Scientific Designation</label><input type="text" id="new-scientific-name" placeholder="e.g. Rhincodon typus">
-            <label>Conservation Status</label><input type="text" id="new-status" placeholder="e.g. Endangered">
-            <label>Data Source</label><input type="text" id="new-source" placeholder="e.g. IUCN Red List">
+            <label>Sea Creature Name</label><input type="text" id="new-common-name">
+            <label>Scientific Designation</label><input type="text" id="new-scientific-name">
+            <label>Conservation Status</label><input type="text" id="new-status">
+            <label>Data Source</label><input type="text" id="new-source">
         </div>
-        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species to Ledger</button>
+        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
 
         <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
-            <h4>🚢 Bulk CSV Import</h4>
+            <h4>🚢 Smart Bulk Sync (Overwrite Duplicates)</h4>
             <p id="progress-text" style="font-size: 0.8em; color: #84ffff; display: none;"></p>
             <div id="progress-container" style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 15px; display: none; overflow: hidden;">
                 <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
             </div>
             <input type="file" id="csv-file" accept=".csv" style="color:#fff; margin-bottom:15px;"><br>
-            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Deploy CSV Data</button>
+            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Sync CSV Data</button>
         </div>
     </div>
 
@@ -190,7 +190,7 @@
                     <td data-label="Scientific" class="col-science">${c.scientific_name || 'N/A'}</td>
                     <td data-label="Status" class="col-status">${c.status || 'N/A'}</td>
                     <td data-label="Source" class="col-source"><span class="source-tag">${c.source || 'N/A'}</span></td>
-                    <td data-label="Recorded" class="timestamp">${formatDate(c.created_at)}</td>
+                    <td data-label="Date" class="timestamp">${formatDate(c.created_at)}</td>
                     <td data-label="Actions" id="actions-${c.id}">
                         <button class="btn-edit" onclick="enterEditMode(${c.id})">✏️</button>
                         <button class="btn-delete" onclick="deleteCreature(${c.id}, '${c.sea_creature}')">🗑</button>
@@ -204,7 +204,7 @@
             const { error } = await sb.auth.signInWithPassword({ email, password });
             const status = document.getElementById('auth-status');
             if (error) { status.innerText = "❌ Login Error: " + error.message; status.style.color = "#ff5252"; }
-            else { status.innerText = "✅ Research Station Unlocked"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
+            else { status.innerText = "✅ Admin Authorized"; status.style.color = "#00e676"; document.getElementById('login-section').style.display = "none"; }
         }
 
         function enterEditMode(id) {
@@ -214,7 +214,7 @@
             row.querySelector('.col-science').innerHTML = `<input type="text" class="edit-input" id="edit-sci-${id}" value="${sci}">`;
             row.querySelector('.col-status').innerHTML = `<input type="text" class="edit-input" id="edit-sts-${id}" value="${sts}">`;
             row.querySelector('.col-source').innerHTML = `<input type="text" class="edit-input" id="edit-src-${id}" value="${src}">`;
-            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾 Save</button> <button class="btn-delete" onclick="loadCreatures()">❌ Cancel</button>`;
+            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾 Save</button> <button class="btn-delete" onclick="loadCreatures()">❌</button>`;
         }
 
         async function saveEdit(id) {
@@ -224,7 +224,7 @@
                 status: document.getElementById(`edit-sts-${id}`).value,
                 source: document.getElementById(`edit-src-${id}`).value
             }).eq('id', id);
-            if (error) alert("🔒 Authorization Required. Please log in."); else loadCreatures();
+            if (error) alert("🔒 Login Required"); else loadCreatures();
         }
 
         async function addNewCreature() {
@@ -234,17 +234,17 @@
                 status: document.getElementById('new-status').value,
                 source: document.getElementById('new-source').value
             }]);
-            if (error) alert("🔒 Admin Credentials Required."); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
+            if (error) alert("🔒 Admin Access Only"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
-async function uploadCSV() {
+        async function uploadCSV() {
             const file = document.getElementById('csv-file').files[0], 
                   btn = document.getElementById('csv-btn'), 
                   bar = document.getElementById('progress-bar'), 
                   cont = document.getElementById('progress-container'), 
                   txt = document.getElementById('progress-text');
 
-            if (!file) return alert("Select a CSV file first.");
+            if (!file) return alert("Select CSV!");
             btn.disabled = true; cont.style.display = txt.style.display = "block";
             
             const reader = new FileReader();
@@ -253,7 +253,6 @@ async function uploadCSV() {
                     const rows = e.target.result.split('\n'), data = [];
                     rows.forEach((r, i) => {
                         const cols = r.split(',');
-                        // Validation: Skip header or empty rows
                         if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
                             data.push({ 
                                 sea_creature: cols[0].trim(), 
@@ -265,23 +264,23 @@ async function uploadCSV() {
                         bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
                     });
 
-                    txt.innerText = "Scanning for duplicates & deploying...";
+                    txt.innerText = "Merging data & resolving duplicates...";
 
-                    // --- THE UPSERT FEATURE ---
-                    // 'onConflict' tells Supabase which columns to check for duplicates
+                    // --- CRITICAL FIX: SMART UPSERT ---
+                    // 'onConflict' tells Supabase which columns to check for duplicates.
                     const { error } = await sb.from('Sea Creatures').upsert(data, { 
-                        onConflict: 'sea_creature, scientific_name' 
+                        onConflict: 'sea_creature,scientific_name' 
                     });
 
                     if (error) throw error;
 
                     bar.style.width = "100%";
-                    txt.innerText = "Ocean Registry Synced (Duplicates Updated)!";
+                    txt.innerText = "Sync Successful!";
                     loadCreatures();
-                    alert("Registry Updated! Existing species were updated with the new source.");
+                    alert("Registry Synced! Any duplicates found were updated with new data.");
 
                 } catch (err) { 
-                    console.error(err);
+                    console.error("Sync Error:", err);
                     alert("❌ Sync Failed: " + err.message); 
                     bar.style.backgroundColor = "red"; 
                 } finally { 
@@ -289,19 +288,19 @@ async function uploadCSV() {
                         btn.disabled = false; 
                         cont.style.display = txt.style.display = "none"; 
                         bar.style.width = "0%"; 
+                        bar.style.backgroundColor = "#00e676";
                     }, 3000); 
                 }
             };
             reader.readAsText(file);
         }
 
-        async function deleteCreature(id, name) { if (confirm(`Permanent removal of ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Admin Access Only"); else loadCreatures(); } }
+        async function deleteCreature(id, name) { if (confirm(`Permanent removal of ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Restricted"); else loadCreatures(); } }
         function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
         function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
-        function exportToCSV() { let csv = "Sea Creature,Science,Status,Source,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry_v3_1.csv'; a.click(); }
+        function exportToCSV() { let csv = "Sea Creature,Science,Status,Source,Date\n"; filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'ocean_registry_v3_2.csv'; a.click(); }
 
         loadCreatures();
     </script>
 </body>
 </html>
-
