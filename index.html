@@ -14,38 +14,29 @@
         }
         :root { --glow: #00e5ff; --alert: #ff5252; --save: #00e676; }
         .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
-        .deep-sea-mode .table-container, .deep-sea-mode .stat-card, .deep-sea-mode .controls {
-            background: rgba(0, 0, 0, 0.8) !important; border: 1px solid var(--glow) !important; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-        }
-
-        #map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; transition: 0.3s; z-index: 1; }
+        
+        /* Map Legibility Fix */
+        #map { height: 450px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; background: #001220; }
+        
         .glow-marker { background: var(--glow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--glow); animation: mapPulse 2s infinite; }
         @keyframes mapPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
         
-        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
-        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid var(--alert) !important; }
-
         .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
         .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
         
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
-        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; transition: background 0.2s; }
-        th:hover { background: rgba(0, 229, 255, 0.1); }
+        th { padding: 12px; text-align: left; border-bottom: 2px solid var(--glow); cursor: pointer; user-select: none; }
         td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
         
-        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; transition: 0.2s; }
-        .col-name-link:hover { text-shadow: 0 0 10px var(--glow); color: #fff; }
+        .col-name-link { cursor: pointer; color: var(--glow); font-weight: bold; }
         
-        .edit-input { width: 90%; padding: 5px; border-radius: 5px; border: 1px solid var(--glow); background: #fff; color: #333; }
         .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
         input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
         
-        button { padding: 8px 15px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .btn-view { background: #ffeb3b; color: #333; }
+        button { padding: 8px 15px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .btn-view { background: #ffeb3b; color: #333; margin-right: 5px; }
         
-        /* Modal Gallery */
         #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; backdrop-filter: blur(5px); }
         
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; vertical-align: middle; }
@@ -67,16 +58,10 @@
         <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 5px;">DEEP SEA MODE</span>
     </div>
 
-    <div class="dashboard">
-        <div id="sync-timestamp" style="position: absolute; right: 0; top: -20px; font-size: 0.75em; color: #80deea;">Last Sync: Checking...</div>
-        <div class="stat-card"><div>SPECIES</div><div id="stat-total" style="font-size: 1.5em; font-weight: bold;">0</div></div>
-        <div class="stat-card" style="border-color: var(--alert);"><div>CRITICAL</div><div id="stat-endangered" style="font-size: 1.5em; font-weight: bold; color: var(--alert);">0</div></div>
-    </div>
-
     <div id="map"></div>
 
     <div class="table-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px;">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%;">
         <table>
             <thead>
                 <tr>
@@ -98,34 +83,28 @@
             <button onclick="adminSignIn()" style="width: 100%; margin-top: 10px;">🔑 Admin Login</button>
         </div>
         <div id="auth-status" style="font-size: 0.8em; color: var(--glow); margin-bottom: 10px;">Status: 🌊 Viewing Mode</div>
-        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: var(--alert); color: white;">🚪 Secure Logout</button>
+        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: var(--alert); color: white;">🚪 Logout</button>
 
         <div class="admin-only" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-            <h4>📝 Add New Observation</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="new-common-name" placeholder="Common Name">
-                <input type="text" id="new-scientific-name" placeholder="Scientific Name">
+                <input type="text" id="new-common-name" placeholder="Name">
+                <input type="text" id="new-scientific-name" placeholder="Scientific">
                 <input type="text" id="new-status" placeholder="Status">
                 <input type="text" id="new-source" placeholder="Source">
-                <input type="number" id="new-lat" placeholder="Latitude" step="any">
-                <input type="number" id="new-lng" placeholder="Longitude" step="any">
-                <input type="text" id="new-img" placeholder="Image URL (Optional)" style="grid-column: span 2;">
+                <input type="number" id="new-lat" placeholder="Lat" step="any">
+                <input type="number" id="new-lng" placeholder="Lng" step="any">
+                <input type="text" id="new-img" placeholder="Image URL" style="grid-column: span 2;">
             </div>
             <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
-
-            <div style="margin-top: 25px;">
-                <h4>🚢 Bulk CSV Sync</h4>
-                <input type="file" id="csv-file" accept=".csv">
-                <button onclick="uploadCSV()" style="background: var(--save); margin-top: 10px; width: 100%;">📥 Sync Registry</button>
-            </div>
+            <input type="file" id="csv-file" accept=".csv" style="margin-top:15px;">
+            <button onclick="uploadCSV()" style="background: var(--save); width: 100%; margin-top:10px;">📥 Sync CSV</button>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); box-shadow: 0 0 30px var(--glow);">
-            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
-            <p style="font-size: 0.8em; opacity: 0.7;">Click anywhere to close</p>
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow);">
+            <h2 id="gallery-title" style="margin-top: 15px;"></h2>
         </div>
     </div>
 
@@ -138,10 +117,6 @@
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
-            if (localStorage.getItem('ocean-theme') === 'deep') { 
-                document.getElementById('theme-toggle').checked = true; 
-                document.body.classList.add('deep-sea-mode'); 
-            }
             loadCreatures();
         }
         sb.auth.onAuthStateChange((_, s) => updateUI(s));
@@ -160,17 +135,11 @@
             await sb.auth.signInWithPassword({ email: e, password: p }); 
         }
         async function adminSignOut() { await sb.auth.signOut(); location.reload(); }
-        function toggleTheme() { 
-            const d = document.getElementById('theme-toggle').checked; 
-            document.body.classList.toggle('deep-sea-mode', d); 
-            localStorage.setItem('ocean-theme', d ? 'deep' : 'light'); 
-        }
 
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
             if (!error) { 
                 currentData = filteredData = data; 
-                document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`;
                 renderTable(data); 
                 if(map) plotDiscoveries(); 
             }
@@ -178,67 +147,32 @@
 
         function renderTable(list) {
             const body = document.getElementById('creature-table-body'); body.innerHTML = '';
-            document.getElementById('stat-total').innerText = list.length;
-            document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
-            
             list.forEach(c => {
-                const isCrit = (c.status||"").toLowerCase().includes("critically endangered");
                 const hasCoords = c.latitude && c.longitude;
-                body.innerHTML += `<tr id="row-${c.id}" class="${isCrit ? 'alert-critical' : ''}">
+                body.innerHTML += `<tr>
                     <td>
-                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('Geospatial coordinates missing.')`}">
+                        <span class="col-name-link" onclick="${hasCoords ? `jumpToMarker(${c.latitude}, ${c.longitude}, ${c.id})` : `alert('No coords')`}">
                             <span style="margin-right:8px">${hasCoords ? '🌍' : '🔘'}</span>${c.sea_creature}
                         </span>
                     </td>
-                    <td class="col-sci">${c.scientific_name}</td>
-                    <td class="col-sts">${c.status}</td>
-                    <td class="col-src"><span style="font-size: 0.8em; opacity: 0.8;">${c.source||'N/A'}</span></td>
-                    <td id="actions-${c.id}">
+                    <td>${c.scientific_name}</td>
+                    <td>${c.status}</td>
+                    <td>${c.source||'N/A'}</td>
+                    <td>
                         <button class="btn-view" onclick="openGallery('${c.sea_creature}')">🖼️ Photo</button>
-                        ${isAdmin ? `
-                            <button onclick="enterEdit(${c.id})">✏️</button>
-                            <button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>
-                        ` : ''}
+                        ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
             });
         }
 
-        function openGallery(name) {
-            const modal = document.getElementById('gallery-modal');
-            const img = document.getElementById('gallery-img');
-            const creature = currentData.find(c => c.sea_creature === name);
-
-            // Use custom URL if available, else fetch relevant placeholder
-            if (creature && creature.image_url) {
-                img.src = creature.image_url;
-            } else {
-                img.src = `https://source.unsplash.com/featured/?${name},underwater`;
-            }
-
-            document.getElementById('gallery-title').innerText = name;
-            modal.style.display = 'block'; 
-        }
-
-        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
-
-        function sortAlphabetically(column) {
-            sortDirection[column] = !sortDirection[column];
-            filteredData.sort((a, b) => {
-                let valA = (a[column] || "").toString().toLowerCase();
-                let valB = (b[column] || "").toString().toLowerCase();
-                if (valA < valB) return sortDirection[column] ? -1 : 1;
-                if (valA > valB) return sortDirection[column] ? 1 : -1;
-                return 0;
-            });
-            renderTable(filteredData);
-        }
-
         function toggleMap() { 
-            const m = document.getElementById('map'); m.style.display = m.style.display === "none" ? "block" : "none";
+            const m = document.getElementById('map'); 
+            m.style.display = m.style.display === "none" ? "block" : "none";
             if (m.style.display === "block") {
                 if (!map) {
-                    map = L.map('map').setView([20, 0], 2);
+                    // Start zoomed out for context
+                    map = L.map('map').setView([20, 0], 2); 
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
                 }
                 setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
@@ -255,65 +189,24 @@
         }
 
         function jumpToMarker(lat, lng, id) {
-            const mDiv = document.getElementById('map');
-            if (mDiv.style.display === "none") toggleMap();
+            if (document.getElementById('map').style.display === "none") toggleMap();
             setTimeout(() => {
-                map.flyTo([lat, lng], 6, { animate: true, duration: 1.5 });
+                // Fly to a medium zoom level (4 instead of 6) for better geographical context
+                map.flyTo([lat, lng], 4, { animate: true, duration: 1.5 });
                 if (markers[id]) markers[id].openPopup();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 300);
         }
 
-        function enterEdit(id) {
-            const row = document.getElementById(`row-${id}`);
-            const sci = row.querySelector('.col-sci').innerText, sts = row.querySelector('.col-sts').innerText, src = row.querySelector('.col-src').innerText;
-            row.querySelector('.col-sci').innerHTML = `<input type="text" class="edit-input" value="${sci}">`;
-            row.querySelector('.col-sts').innerHTML = `<input type="text" class="edit-input" value="${sts}">`;
-            row.querySelector('.col-src').innerHTML = `<input type="text" class="edit-input" value="${src}">`;
-            document.getElementById(`actions-${id}`).innerHTML = `
-                <button onclick="saveEdit(${id})" style="background:var(--save); color:white;">💾 Save</button>
-                <button onclick="loadCreatures()" style="background:#eee; color:#333;">❌</button>
-            `;
+        function openGallery(name) {
+            const modal = document.getElementById('gallery-modal');
+            const img = document.getElementById('gallery-img');
+            const creature = currentData.find(c => c.sea_creature === name);
+            img.src = (creature && creature.image_url) ? creature.image_url : `https://source.unsplash.com/featured/?${name},underwater`;
+            document.getElementById('gallery-title').innerText = name;
+            modal.style.display = 'block'; 
         }
-
-        async function saveEdit(id) {
-            const inputs = document.getElementById(`row-${id}`).querySelectorAll('.edit-input');
-            await sb.from('Sea Creatures').update({ scientific_name: inputs[0].value, status: inputs[1].value, source: inputs[2].value }).eq('id', id);
-            loadCreatures();
-        }
-
-        async function uploadCSV() {
-            const f = document.getElementById('csv-file').files[0]; if(!f) return;
-            const reader = new FileReader(); reader.onload = async (e) => {
-                const lines = e.target.result.split('\n'), data = [];
-                lines.forEach(l => {
-                    const c = l.split(',');
-                    if (c[0] && c[0].toLowerCase() !== 'sea creature') data.push({
-                        sea_creature: c[0].trim(), scientific_name: c[1]?.trim(), status: c[2]?.trim(), source: c[3]?.trim(),
-                        latitude: parseFloat(c[4])||null, longitude: parseFloat(c[5])||null, image_url: c[6]?.trim() || null
-                    });
-                });
-                await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                loadCreatures();
-            }; reader.readAsText(f);
-        }
-
-        async function addNewCreature() {
-            const entry = {
-                sea_creature: document.getElementById('new-common-name').value,
-                scientific_name: document.getElementById('new-scientific-name').value,
-                status: document.getElementById('new-status').value,
-                source: document.getElementById('new-source').value,
-                latitude: parseFloat(document.getElementById('new-lat').value)||null,
-                longitude: parseFloat(document.getElementById('new-lng').value)||null,
-                image_url: document.getElementById('new-img').value || null
-            };
-            await sb.from('Sea Creatures').upsert([entry], { onConflict: 'sea_creature,scientific_name' });
-            loadCreatures();
-        }
-
-        async function deleteItem(id) { if(confirm("Delete?")) { await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); } }
-        function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(s => s?.toString().toLowerCase().includes(v))); renderTable(filteredData); }
+        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
 
         checkSession();
     </script>
