@@ -4,124 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Underwater Registry 🐚</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* --- AQUARIUM THEME --- */
+        /* --- BASE THEME & DEEP SEA MODE --- */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; padding: 20px; min-height: 100vh;
             background: linear-gradient(180deg, #0077be 0%, #003366 100%);
-            background-attachment: fixed; color: #fff; overflow-x: hidden;
+            background-attachment: fixed; color: #fff; transition: 0.5s;
+        }
+        :root { --glow: #00e5ff; }
+        .deep-sea-mode { background: radial-gradient(circle, #001220 0%, #000 100%) !important; color: #b2ebf2 !important; }
+        .deep-sea-mode .table-container, .deep-sea-mode .stat-card, .deep-sea-mode .controls {
+            background: rgba(0, 0, 0, 0.8) !important; border: 1px solid var(--glow) !important; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
-        .bubble {
-            position: fixed; bottom: -50px; background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 50%; pointer-events: none; animation: rise 10s infinite ease-in; z-index: 0;
-        }
+        /* --- MAP & PULSE --- */
+        #map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 25px; border: 2px solid var(--glow); display: none; }
+        .glow-marker { background: var(--glow); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--glow); animation: mapPulse 2s infinite; }
+        @keyframes mapPulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
 
-        @keyframes rise {
-            0% { bottom: -50px; transform: translateX(0); opacity: 1; }
-            100% { bottom: 110vh; transform: translateX(50px); opacity: 0; }
-        }
-
-        h2 { color: #e0f7fa; text-shadow: 0 0 15px rgba(0, 184, 212, 0.8); text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
-        .deploy-tag { text-align: center; font-size: 0.8em; color: #00e676; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-
-        /* --- CONSERVATION GLOW ALERT --- */
-        @keyframes alertPulse {
-            0% { background: rgba(255, 82, 82, 0.15); }
-            50% { background: rgba(255, 82, 82, 0.45); }
-            100% { background: rgba(255, 82, 82, 0.15); }
-        }
-
-        .alert-critical { 
-            animation: alertPulse 2s infinite ease-in-out; 
-            border-left: 6px solid #ff5252 !important; 
-        }
-
-        /* Dashboard & Stats */
-        .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
+        /* --- UI COMPONENTS --- */
+        .dashboard { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; position: relative; }
         .stat-card { flex: 1; min-width: 120px; backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
-        .stat-val { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
-
-        .search-container { position: relative; z-index: 2; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
-        #search-input { width: 100%; padding: 15px; border: 2px solid #00b8d4; border-radius: 30px; background: rgba(0,0,0,0.4); color: white; font-size: 16px; outline: none; box-sizing: border-box;}
-
-        .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 700px; }
+        .table-container { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; color: #fff; min-width: 800px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .col-name { cursor: pointer; text-decoration: underline dotted var(--glow); }
+        .alert-critical { animation: rowGlow 2s infinite; border-left: 5px solid #ff5252 !important; }
+        @keyframes rowGlow { 0% { background: rgba(255,82,82,0.1); } 50% { background: rgba(255,82,82,0.3); } 100% { background: rgba(255,82,82,0.1); } }
         
-        /* Gallery Interaction */
-        .col-name { cursor: pointer; text-decoration: underline dotted #00e5ff; transition: 0.3s; }
-        .col-name:hover { color: #84ffff; text-shadow: 0 0 10px #00e5ff; }
-
-        @media screen and (max-width: 900px) {
-            thead { display: none; }
-            tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
-            td { display: flex; justify-content: space-between; padding: 8px 5px; border: none; font-size: 0.9em; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
-            td::before { content: attr(data-label); font-weight: bold; color: #84ffff; text-transform: uppercase; font-size: 0.75em; text-align: left; }
-            button { width: 48%; margin-top: 5px; }
-        }
-
-        @media screen and (min-width: 901px) {
-            th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-            th { background: rgba(0, 119, 190, 0.6); color: #84ffff; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; }
-            .search-container { flex-direction: row; }
-        }
-
-        .edit-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #00e5ff; background: white; color: #333; }
-        .source-tag { background: rgba(132, 255, 255, 0.15); padding: 4px 8px; border-radius: 5px; font-size: 0.85em; color: #84ffff; border: 1px solid rgba(132, 255, 255, 0.3); }
-
-        .controls { position: relative; z-index: 2; margin-top: 30px; padding: 25px; background: rgba(0, 51, 102, 0.8); border-radius: 20px; border: 1px solid #00b8d4; }
-        .auth-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .controls { background: rgba(0, 51, 102, 0.8); border-radius: 20px; padding: 25px; border: 1px solid #00b8d4; margin-top: 30px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid var(--glow); border-radius: 8px; color: white; box-sizing: border-box; }
+        button { padding: 10px 20px; background: var(--glow); color: #003366; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
         
-        button { padding: 10px 20px; background: #00e5ff; color: #003366; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-delete { background: #ff5252; color: white; }
-        .btn-edit { background: #ffa726; color: white; }
-        .btn-save { background: #00e676; color: white; }
-        .btn-logout { background: #ff5252; color: white; margin-top: 10px; display: none; }
-        
-        input { width: 100%; padding: 12px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid #00b8d4; border-radius: 10px; color: white; outline: none; box-sizing: border-box; }
-        label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; font-weight: bold; }
-
-        /* Gallery Modal Styling */
-        #gallery-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); cursor: zoom-out; }
+        /* Modal */
+        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); cursor: zoom-out; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #003366; transition: .4s; border-radius: 20px; border: 1px solid var(--glow); }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
 
-    <div id="bubble-container"></div>
-    <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Research Station Management V3.6</div>
+    <h2 style="margin-bottom: 0;">🔱 Sea Creatures Registry</h2>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <label class="switch"><input type="checkbox" id="theme-toggle" onclick="toggleTheme()"><span class="slider"></span></label>
+        <span style="font-size: 0.7em; color: var(--glow); letter-spacing: 1px; margin-left: 10px;">DEEP SEA MODE</span>
+    </div>
 
     <div class="dashboard">
-        <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea; font-style: italic;">Last Sync: Never</div>
-        <div class="stat-card" style="background: rgba(0, 184, 212, 0.2);">
-            <div>TOTAL SPECIES</div>
-            <div id="stat-total" class="stat-val">0</div>
-        </div>
-        <div class="stat-card" style="background: rgba(255, 82, 82, 0.2);">
-            <div>CRITICAL ALERTS</div>
-            <div id="stat-endangered" class="stat-val">0</div>
-        </div>
-        <div class="stat-card" style="background: rgba(0, 230, 118, 0.2);">
-            <div>STABLE SPECIES</div>
-            <div id="stat-stable" class="stat-val">0</div>
-        </div>
-    </div>
-    
-    <div class="search-container">
-        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records...">
-        <button onclick="exportToCSV()" style="background: #ffeb3b; color: #333;">📤 Export CSV</button>
+        <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea;">Last Sync: Never</div>
+        <button onclick="toggleMap()" style="position: absolute; left: 0; top: -35px; background: none; color: var(--glow); border: 1px solid var(--glow); padding: 5px 15px;">🛰️ Toggle Map</button>
+        <div class="stat-card"><div>SPECIES</div><div id="stat-total" style="font-size: 1.5em; font-weight: bold;">0</div></div>
+        <div class="stat-card" style="border-color: #ff5252;"><div>CRITICAL</div><div id="stat-endangered" style="font-size: 1.5em; font-weight: bold; color: #ff5252;">0</div></div>
     </div>
 
+    <div id="map"></div>
+
     <div class="table-container">
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="🔍 Search records..." style="margin-bottom: 15px; width: 100%;">
         <table>
             <thead>
                 <tr>
-                    <th onclick="sortData('sea_creature')">🧬 Creature</th>
+                    <th onclick="sortData('sea_creature')">🧬 Name</th>
                     <th onclick="sortData('scientific_name')">📖 Scientific</th>
                     <th onclick="sortData('status')">📍 Status</th>
                     <th onclick="sortData('source')">📋 Source</th>
-                    <th onclick="sortData('created_at')">🕒 Date</th>
                     <th>⚙️ Actions</th>
                 </tr>
             </thead>
@@ -130,175 +82,137 @@
     </div>
 
     <div class="controls">
-        <h3>🛠 Station Admin</h3>
-        <div id="login-section" class="auth-box">
-            <input type="email" id="admin-email" placeholder="Researcher Email">
-            <input type="password" id="admin-password" placeholder="Access Key">
-            <button style="margin-top:10px; width: 100%;" onclick="adminSignIn()">🔑 Login</button>
+        <div id="login-section" style="margin-bottom: 20px;">
+            <input type="email" id="admin-email" placeholder="Email">
+            <input type="password" id="admin-password" placeholder="Key">
+            <button onclick="adminSignIn()" style="width: 100%; margin-top: 10px;">🔑 Login</button>
         </div>
-        <div id="auth-status" style="margin-bottom:10px; font-weight:bold; color: #84ffff;">Status: 🌊 Viewing Mode</div>
-        <button id="logout-btn" class="btn-logout" onclick="adminSignOut()">🚪 Secure Logout</button>
-        
-        <hr style="margin: 20px 0; opacity: 0.2;">
+        <div id="auth-status" style="font-size: 0.8em; color: #84ffff; margin-bottom: 10px;">Status: 🌊 Viewing</div>
+        <button id="logout-btn" onclick="adminSignOut()" style="display:none; background: #ff5252; color: white;">🚪 Logout</button>
 
-        <div class="input-group">
-            <label>Common Name</label><input type="text" id="new-common-name">
-            <label>Scientific Name</label><input type="text" id="new-scientific-name">
-            <label>Conservation Status</label><input type="text" id="new-status">
-            <label>Data Source</label><input type="text" id="new-source">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+            <input type="text" id="new-common-name" placeholder="Name">
+            <input type="text" id="new-scientific-name" placeholder="Scientific">
+            <input type="text" id="new-status" placeholder="Status">
+            <input type="text" id="new-source" placeholder="Source">
+            <input type="number" id="new-lat" placeholder="Latitude (e.g. 31.0)" step="any">
+            <input type="number" id="new-lng" placeholder="Longitude (e.g. -114.8)" step="any">
         </div>
-        <br><button style="width: 100%;" onclick="addNewCreature()">✨ Add Species</button>
+        <button onclick="addNewCreature()" style="width: 100%; margin-top: 15px;">✨ Add Species</button>
 
-        <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.2); padding-top:20px;">
-            <h4>🚢 Smart CSV Sync</h4>
-            <div id="progress-container" style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 10px; display: none; overflow: hidden;">
-                <div id="progress-bar" style="width: 0%; height: 100%; background: #00e676; transition: 0.3s;"></div>
-            </div>
-            <input type="file" id="csv-file" accept=".csv" style="margin-bottom:10px;"><br>
-            <button id="csv-btn" style="background: #00e676; width: 100%;" onclick="uploadCSV()">📥 Sync Data</button>
+        <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <h4>🚢 Bulk CSV Sync (Name, Science, Status, Source, Lat, Lng)</h4>
+            <input type="file" id="csv-file" accept=".csv">
+            <button onclick="uploadCSV()" style="background: #00e676; margin-top: 10px; width: 100%;">📥 Sync Data</button>
         </div>
     </div>
 
     <div id="gallery-modal" onclick="closeGallery()">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid #00e5ff; box-shadow: 0 0 30px rgba(0,229,255,0.5);">
-            <h3 id="gallery-title" style="color: #fff; margin-top: 15px; font-size: 1.8em; text-shadow: 0 0 10px #000;"></h3>
-            <p id="gallery-sci" style="color: #84ffff; font-style: italic;"></p>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 500px;">
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 15px; border: 2px solid var(--glow);">
+            <h3 id="gallery-title" style="color: #fff; margin-top: 10px;"></h3>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co'; 
-        const _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';             
+        const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co', _KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
         const sb = window.supabase.createClient(_URL, _KEY);
-        let currentData = [], filteredData = [], sortOrder = true;
+        let currentData = [], filteredData = [], sortOrder = true, map, markers = [];
 
-        // --- SESSION PERSISTENCE ---
         async function checkSession() {
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
+            if (localStorage.getItem('ocean-theme') === 'deep') { document.getElementById('theme-toggle').checked = true; document.body.classList.add('deep-sea-mode'); }
         }
-        sb.auth.onAuthStateChange((event, session) => updateUI(session));
-
-        function updateUI(session) {
-            const loginSection = document.getElementById('login-section'), authStatus = document.getElementById('auth-status'), logoutBtn = document.getElementById('logout-btn');
-            if (session) {
-                loginSection.style.display = "none"; logoutBtn.style.display = "block";
-                authStatus.innerText = "✅ Authorized Admin Mode"; authStatus.style.color = "#00e676";
-            } else {
-                loginSection.style.display = "block"; logoutBtn.style.display = "none";
-                authStatus.innerText = "Status: 🌊 Viewing Mode"; authStatus.style.color = "#84ffff";
-            }
+        sb.auth.onAuthStateChange((_, s) => updateUI(s));
+        function updateUI(s) {
+            document.getElementById('login-section').style.display = s ? "none" : "block";
+            document.getElementById('logout-btn').style.display = s ? "block" : "none";
+            document.getElementById('auth-status').innerText = s ? "✅ Admin Authorized" : "Status: 🌊 Viewing";
         }
-
-        async function adminSignIn() {
-            const email = document.getElementById('admin-email').value, password = document.getElementById('admin-password').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message);
-        }
+        async function adminSignIn() { const e = document.getElementById('admin-email').value, p = document.getElementById('admin-password').value; await sb.auth.signInWithPassword({ email: e, password: p }); }
         async function adminSignOut() { await sb.auth.signOut(); location.reload(); }
+        function toggleTheme() { const d = document.getElementById('theme-toggle').checked; document.body.classList.toggle('deep-sea-mode', d); localStorage.setItem('ocean-theme', d ? 'deep' : 'light'); }
 
-        // --- CORE LOGIC ---
-        function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'N/A'; }
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
-            if (!error) { currentData = filteredData = data; renderTable(currentData); }
+            if (!error) { currentData = filteredData = data; renderTable(data); if(map) plotDiscoveries(); }
         }
 
         function renderTable(list) {
-            const body = document.getElementById('creature-table-body');
-            body.innerHTML = '';
+            const body = document.getElementById('creature-table-body'); body.innerHTML = '';
             document.getElementById('stat-total').innerText = list.length;
             document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
-            document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern|safe/)).length;
-
             list.forEach(c => {
-                const isCritical = (c.status || "").toLowerCase().includes("critically endangered");
-                const rowClass = isCritical ? 'class="alert-critical"' : '';
-                body.innerHTML += `<tr id="row-${c.id}" ${rowClass}>
-                    <td data-label="Creature" class="col-name" onclick="openGallery('${c.sea_creature}', '${c.scientific_name}')">${c.sea_creature}</td>
-                    <td data-label="Scientific" class="col-sci">${c.scientific_name}</td>
-                    <td data-label="Status" class="col-sts">${c.status}</td>
-                    <td data-label="Source" class="col-src"><span class="source-tag">${c.source || 'N/A'}</span></td>
-                    <td data-label="Date" class="timestamp">${formatDate(c.created_at)}</td>
-                    <td data-label="Actions" id="actions-${c.id}">
-                        <button onclick="enterEdit(${c.id})">✏️</button>
-                        <button class="btn-delete" onclick="deleteItem(${c.id})">🗑</button>
-                    </td>
+                const isCrit = (c.status||"").toLowerCase().includes("critically endangered");
+                body.innerHTML += `<tr class="${isCrit ? 'alert-critical' : ''}">
+                    <td class="col-name" onclick="openGallery('${c.sea_creature}')">${c.sea_creature}</td>
+                    <td>${c.scientific_name}</td>
+                    <td>${c.status}</td>
+                    <td><span style="font-size: 0.8em; opacity: 0.7;">${c.source||'N/A'}</span></td>
+                    <td><button onclick="deleteItem(${c.id})" style="background:#ff5252; padding: 5px 10px;">🗑</button></td>
                 </tr>`;
             });
         }
 
-        // --- GALLERY FUNCTIONS ---
-        function openGallery(name, science) {
-            const modal = document.getElementById('gallery-modal'), img = document.getElementById('gallery-img'), title = document.getElementById('gallery-title'), sciText = document.getElementById('gallery-sci');
-            img.src = `https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&q=80&w=800&q=80`; // Default beautiful underwater
-            // Dynamically search Unsplash for the creature
-            fetch(`https://api.unsplash.com/search/photos?page=1&query=${name} underwater&client_id=YOUR_UNSPLASH_ACCESS_KEY`)
-                .then(res => res.json())
-                .then(data => { if(data.results.length > 0) img.src = data.results[0].urls.regular; });
-            
-            title.innerText = name; sciText.innerText = science;
-            modal.style.display = "block";
+        function toggleMap() { 
+            const m = document.getElementById('map'); 
+            m.style.display = m.style.display === "none" ? "block" : "none";
+            if (m.style.display === "block") {
+                if (!map) {
+                    map = L.map('map').setView([20, 0], 2);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                }
+                setTimeout(() => { map.invalidateSize(); plotDiscoveries(); }, 200);
+            }
         }
-        function closeGallery() { document.getElementById('gallery-modal').style.display = "none"; }
 
-        // --- SMART SYNC & CRUD ---
+        function plotDiscoveries() {
+            markers.forEach(m => map.removeLayer(m)); markers = [];
+            currentData.filter(c => c.latitude && c.longitude).forEach(d => {
+                const icon = L.divIcon({ className: 'glow-marker', iconSize: [10, 10] });
+                const m = L.marker([d.latitude, d.longitude], { icon }).bindPopup(`<b>${d.sea_creature}</b>`).addTo(map);
+                markers.push(m);
+            });
+        }
+
         async function uploadCSV() {
-            const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), prog = document.getElementById('progress-container'), bar = document.getElementById('progress-bar');
-            if (!file) return alert("Select CSV File");
-            btn.disabled = true; prog.style.display = "block"; bar.style.width = "50%";
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const rows = e.target.result.split('\n'), data = [];
-                rows.forEach(r => {
-                    const cols = r.split(',');
-                    if (cols[0] && cols[0].toLowerCase() !== "sea creature") {
-                        data.push({ sea_creature: cols[0].trim(), scientific_name: cols[1]?.trim(), status: cols[2]?.trim(), source: cols[3]?.trim() || 'CSV Sync' });
-                    }
+            const f = document.getElementById('csv-file').files[0]; if(!f) return;
+            const reader = new FileReader(); reader.onload = async (e) => {
+                const lines = e.target.result.split('\n'), data = [];
+                lines.forEach(l => {
+                    const c = l.split(',');
+                    if (c[0] && c[0].toLowerCase() !== 'sea creature') data.push({
+                        sea_creature: c[0].trim(), scientific_name: c[1]?.trim(), status: c[2]?.trim(), source: c[3]?.trim(),
+                        latitude: parseFloat(c[4])||null, longitude: parseFloat(c[5])||null
+                    });
                 });
-                const { error } = await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                if (error) alert("❌ Sync Failed: " + error.message);
-                else { bar.style.width = "100%"; document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`; alert("✅ Sync Complete!"); loadCreatures(); }
-                btn.disabled = false; setTimeout(() => prog.style.display = "none", 2000);
-            };
-            reader.readAsText(file);
+                await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
+                document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`;
+                loadCreatures();
+            }; reader.readAsText(f);
         }
 
         async function addNewCreature() {
-            const entry = { sea_creature: document.getElementById('new-common-name').value, scientific_name: document.getElementById('new-scientific-name').value, status: document.getElementById('new-status').value, source: document.getElementById('new-source').value };
-            const { error } = await sb.from('Sea Creatures').upsert([entry], { onConflict: 'sea_creature,scientific_name' });
-            if (error) alert("🔒 Admin Access Required"); else loadCreatures();
+            const entry = {
+                sea_creature: document.getElementById('new-common-name').value,
+                scientific_name: document.getElementById('new-scientific-name').value,
+                status: document.getElementById('new-status').value,
+                source: document.getElementById('new-source').value,
+                latitude: parseFloat(document.getElementById('new-lat').value)||null,
+                longitude: parseFloat(document.getElementById('new-lng').value)||null
+            };
+            await sb.from('Sea Creatures').upsert([entry], { onConflict: 'sea_creature,scientific_name' });
+            loadCreatures();
         }
 
-        function enterEdit(id) {
-            const row = document.getElementById(`row-${id}`), fields = ['name', 'sci', 'sts', 'src'];
-            fields.forEach(f => {
-                const selector = f === 'src' ? '.col-src span' : `.col-${f === 'name' ? 'name' : f === 'sci' ? 'sci' : 'sts'}`;
-                const el = row.querySelector(selector);
-                const val = el.innerText === 'N/A' ? '' : el.innerText;
-                el.innerHTML = `<input type="text" class="edit-input" value="${val}" spellcheck="false">`;
-            });
-            document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">💾</button>`;
-        }
+        async function deleteItem(id) { if(confirm("Delete?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
+        function openGallery(n) { document.getElementById('gallery-img').src = `https://images.unsplash.com/photo-1582967788606-a171c1080cb0?w=500`; document.getElementById('gallery-title').innerText = n; document.getElementById('gallery-modal').style.display = 'block'; }
+        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
+        function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(s => s?.toString().toLowerCase().includes(v))); renderTable(filteredData); }
 
-        async function saveEdit(id) {
-            const row = document.getElementById(`row-${id}`), inputs = row.querySelectorAll('input');
-            const { error } = await sb.from('Sea Creatures').update({ sea_creature: inputs[0].value, scientific_name: inputs[1].value, status: inputs[2].value, source: inputs[3].value }).eq('id', id);
-            if (error) alert("Access Denied"); else loadCreatures();
-        }
-
-        async function deleteItem(id) { if (confirm("Delete this record?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
-        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
-        function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
-        function exportToCSV() { 
-            let csv = "Creature,Scientific,Status,Source,Date\n"; 
-            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); 
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'registry_export.csv'; a.click(); 
-        }
-
-        checkSession(); createBubbles(); loadCreatures();
+        checkSession(); loadCreatures();
     </script>
 </body>
 </html>
