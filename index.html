@@ -151,7 +151,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="col-name" data-sort="sea_creature">📍 Discovered At ↕️</th>
+                        <th class="col-name" data-sort="sea_creature">🐠 Fish (Discovered At) ↕️</th>
                         <th class="col-sci" data-sort="scientific_name">📖 Taxonomy ↕️</th>
                         <th class="col-sts" data-sort="status">🛡️ Conservation ↕️</th>
                         <th class="col-src" data-sort="source">📋 Source ↕️</th>
@@ -181,14 +181,12 @@
     </main>
 
     <script>
-        /** * GEMINI 3.1 ARCHITECTURE
-         * Encapsulated application logic utilizing ES6 classes and modular design.
-         */
+        /** * GEMINI 3.1 ARCHITECTURE */
         class OceanRegistryApp {
             constructor() {
                 this.DB_URL = 'https://dfuqjromqjmpeeymiejx.supabase.co';
                 this.DB_KEY = 'sb_publishable_Tow5s3qQR_3ZOXZpDrjl4Q_a5xFXCRX';
-                this.UNSPLASH_KEY = 'rwvKG94GLYXrI4AK7n8AEKI5WVrk4jv-gcf8c-TuOLM'; // Replace prior to deployment
+                this.UNSPLASH_KEY = 'rwvKG94GLYXrI4AK7n8AEKI5WVrk4jv-gcf8c-TuOLM'; 
                 
                 this.supabase = window.supabase.createClient(this.DB_URL, this.DB_KEY);
                 this.mapInstance = null;
@@ -208,6 +206,24 @@
                 await this.fetchTelemetry();
             }
 
+            // --- EMOJI INTELLIGENCE ROUTER ---
+            getEmoji(name) {
+                const n = name.toLowerCase();
+                if (n.includes('shark')) return '🦈';
+                if (n.includes('whale') || n.includes('narwhal')) return '🐋';
+                if (n.includes('dolphin') || n.includes('vaquita') || n.includes('porpoise')) return '🐬';
+                if (n.includes('octopus')) return '🐙';
+                if (n.includes('squid')) return '🦑';
+                if (n.includes('turtle')) return '🐢';
+                if (n.includes('penguin')) return '🐧';
+                if (n.includes('seal') || n.includes('walrus') || n.includes('sea lion')) return '🦭';
+                if (n.includes('shrimp')) return '🦐';
+                if (n.includes('crab') || n.includes('isopod')) return '🦀';
+                if (n.includes('jellyfish')) return '🪼';
+                if (n.includes('ray') || n.includes('manta')) return '🌊'; 
+                return '🐟'; // Default fallback
+            }
+
             // --- MAP LOGIC ---
             initMap() {
                 this.mapInstance = L.map('map', { zoomControl: false }).setView([20, 0], 2);
@@ -217,7 +233,6 @@
             }
 
             plotCoordinates() {
-                // Clear existing markers securely
                 this.mapMarkers.forEach(marker => this.mapInstance.removeLayer(marker));
                 this.mapMarkers.clear();
 
@@ -229,7 +244,9 @@
 
                     if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
                         const popupHTML = `
-                            <b onclick="App.requestVisual('${record.sea_creature.replace(/'/g, "\\'")}')">${record.sea_creature}</b><br>
+                            <b onclick="App.requestVisual('${record.sea_creature.replace(/'/g, "\\'")}')">
+                                ${this.getEmoji(record.sea_creature)} ${record.sea_creature}
+                            </b><br>
                             <span style="font-family: monospace; opacity: 0.8;">[${lat.toFixed(4)}, ${lng.toFixed(4)}]</span>
                         `;
                         const marker = L.marker([lat, lng], { icon }).bindPopup(popupHTML).addTo(this.mapInstance);
@@ -292,11 +309,15 @@
                     const lng = parseFloat(record.longitude);
                     const validCoords = !isNaN(lat) && !isNaN(lng);
                     const safeName = record.sea_creature.replace(/'/g, "\\'");
+                    
+                    const emoji = this.getEmoji(record.sea_creature);
 
                     return `
                         <tr>
                             <td class="col-name">
-                                <span class="name-link" onclick="App.focusCoordinates(${lat}, ${lng}, ${record.id})">${record.sea_creature}</span>
+                                <span class="name-link" onclick="App.focusCoordinates(${lat}, ${lng}, ${record.id})">
+                                    ${emoji} ${record.sea_creature}
+                                </span>
                                 <span class="coord-text">${validCoords ? `[ ${lat.toFixed(2)}, ${lng.toFixed(2)} ]` : 'Location Unknown'}</span>
                             </td>
                             <td class="col-sci">${record.scientific_name}</td>
@@ -338,7 +359,6 @@
 
             // --- UTILITIES & AUTH ---
             setupEventListeners() {
-                // Live Search
                 document.getElementById('search-input').addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
                     this.state.filtered = this.state.data.filter(c => 
@@ -348,7 +368,6 @@
                     this.plotCoordinates();
                 });
 
-                // Column Sorting
                 document.querySelectorAll('th[data-sort]').forEach(th => {
                     th.addEventListener('click', () => {
                         const key = th.dataset.sort;
@@ -369,7 +388,7 @@
                 this.state.isAdmin = isLoggedIn;
                 document.getElementById('login-view').classList.toggle('hidden', isLoggedIn);
                 document.getElementById('admin-view').classList.toggle('hidden', !isLoggedIn);
-                this.renderTable(); // Re-render to show/hide delete buttons
+                this.renderTable(); 
             }
 
             async authenticate() {
@@ -385,6 +404,7 @@
                 this.updateAuthUI(false);
             }
 
+            // ROBUST CSV PARSING ENGINE
             async processCSV() {
                 const file = document.getElementById('csv-file').files[0];
                 if (!file) return alert("Select a CSV payload first.");
@@ -392,23 +412,31 @@
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     const lines = e.target.result.split('\n');
+                    
                     const payload = lines.slice(1).filter(l => l.trim()).map(l => {
-                        const cols = l.split(',');
+                        // Regex to split by comma, ignoring commas inside double quotes
+                        const cols = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => 
+                            col.trim().replace(/^"|"$/g, '') // Remove wrapping quotes if present
+                        );
+                        
                         return {
-                            sea_creature: cols[0].trim(),
-                            scientific_name: cols[1]?.trim(),
-                            status: cols[2]?.trim(),
-                            source: cols[3]?.trim(),
+                            sea_creature: cols[0],
+                            scientific_name: cols[1] || null,
+                            status: cols[2] || null,
+                            source: cols[3] || null,
                             latitude: parseFloat(cols[4]),
                             longitude: parseFloat(cols[5]),
-                            image_url: cols[6]?.trim() || null
+                            image_url: cols[6] || null
                         };
                     });
 
                     const { error } = await this.supabase.from('Sea Creatures').upsert(payload, { onConflict: 'sea_creature,scientific_name' });
-                    if (error) alert("Sync Error: " + error.message);
-                    else {
+                    
+                    if (error) {
+                        alert("Sync Error: " + error.message);
+                    } else {
                         alert("Telemetry Sync Complete.");
+                        document.getElementById('csv-file').value = ''; // Safely reset the input field
                         this.fetchTelemetry();
                     }
                 };
