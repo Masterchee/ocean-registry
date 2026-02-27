@@ -237,63 +237,67 @@
             if (error) alert("🔒 Admin Access Only"); else { loadCreatures(); document.querySelectorAll('.input-group input').forEach(i => i.value = ''); }
         }
 
-        async function uploadCSV() {
-            const file = document.getElementById('csv-file').files[0], 
-                  btn = document.getElementById('csv-btn'), 
-                  bar = document.getElementById('progress-bar'), 
-                  cont = document.getElementById('progress-container'), 
-                  txt = document.getElementById('progress-text');
+async function uploadCSV() {
+    const file = document.getElementById('csv-file').files[0], 
+          btn = document.getElementById('csv-btn'), 
+          bar = document.getElementById('progress-bar'), 
+          cont = document.getElementById('progress-container'), 
+          txt = document.getElementById('progress-text');
 
-            if (!file) return alert("Select CSV!");
-            btn.disabled = true; cont.style.display = txt.style.display = "block";
-            
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const rows = e.target.result.split('\n'), data = [];
-                    rows.forEach((r, i) => {
-                        const cols = r.split(',');
-                        if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
-                            data.push({ 
-                                sea_creature: cols[0].trim(), 
-                                scientific_name: cols[1]?.trim() || '', 
-                                status: cols[2]?.trim() || '',
-                                source: cols[3]?.trim() || 'CSV Update'
-                            });
-                        }
-                        bar.style.width = Math.round(((i + 1) / rows.length) * 50) + "%";
+    if (!file) return alert("Select CSV!");
+    btn.disabled = true; 
+    cont.style.display = txt.style.display = "block";
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const rows = e.target.result.split('\n'), data = [];
+            rows.forEach((r) => {
+                const cols = r.split(',');
+                if (cols[0]?.trim() && cols[0].toLowerCase() !== "sea creature") { 
+                    data.push({ 
+                        sea_creature: cols[0].trim(), 
+                        scientific_name: cols[1]?.trim() || '', 
+                        status: cols[2]?.trim() || '',
+                        source: cols[3]?.trim() || 'CSV Update'
                     });
-
-                    txt.innerText = "Merging data & resolving duplicates...";
-
-                    // --- CRITICAL FIX: SMART UPSERT ---
-                    // 'onConflict' tells Supabase which columns to check for duplicates.
-                    const { error } = await sb.from('Sea Creatures').upsert(data, { 
-                        onConflict: 'sea_creature,scientific_name' 
-                    });
-
-                    if (error) throw error;
-
-                    bar.style.width = "100%";
-                    txt.innerText = "Sync Successful!";
-                    loadCreatures();
-                    alert("Registry Synced! Any duplicates found were updated with new data.");
-
-                } catch (err) { 
-                    console.error("Sync Error:", err);
-                    alert("❌ Sync Failed: " + err.message); 
-                    bar.style.backgroundColor = "red"; 
-                } finally { 
-                    setTimeout(() => { 
-                        btn.disabled = false; 
-                        cont.style.display = txt.style.display = "none"; 
-                        bar.style.width = "0%"; 
-                        bar.style.backgroundColor = "#00e676";
-                    }, 3000); 
                 }
-            };
-            reader.readAsText(file);
+            });
+
+            txt.innerText = "Merging records... 🌊";
+
+            // --- THE CRITICAL UPSERT FIX ---
+            // We are using the exact column names as defined in your UNIQUE constraint.
+            const { error } = await sb
+                .from('Sea Creatures')
+                .upsert(data, { 
+                    onConflict: 'sea_creature,scientific_name', // Must be comma-separated, no spaces
+                    ignoreDuplicates: false // Set to false to ensure it OVERWRITES
+                });
+
+            if (error) throw error;
+
+            bar.style.width = "100%";
+            txt.innerText = "Ocean Registry Synced!";
+            loadCreatures();
+            alert("Success! Duplicates were updated with the new source data.");
+
+        } catch (err) { 
+            console.error("Supabase Error Object:", err);
+            // If it still says "Unique Constraint Violation", it means the JS isn't reaching the Upsert logic correctly
+            alert("❌ Sync Failed: " + err.message); 
+            bar.style.backgroundColor = "red"; 
+        } finally { 
+            setTimeout(() => { 
+                btn.disabled = false; 
+                cont.style.display = txt.style.display = "none"; 
+                bar.style.width = "0%"; 
+                bar.style.backgroundColor = "#00e676";
+            }, 3000); 
         }
+    };
+    reader.readAsText(file);
+}
 
         async function deleteCreature(id, name) { if (confirm(`Permanent removal of ${name}?`)) { const { error } = await sb.from('Sea Creatures').delete().eq('id', id); if (error) alert("🔒 Restricted"); else loadCreatures(); } }
         function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
@@ -304,3 +308,4 @@
     </script>
 </body>
 </html>
+
