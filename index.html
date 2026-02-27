@@ -49,6 +49,10 @@
         .table-container { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; color: #fff; min-width: 700px; }
         
+        /* Gallery Interaction */
+        .col-name { cursor: pointer; text-decoration: underline dotted #00e5ff; transition: 0.3s; }
+        .col-name:hover { color: #84ffff; text-shadow: 0 0 10px #00e5ff; }
+
         @media screen and (max-width: 900px) {
             thead { display: none; }
             tr { display: block; margin-bottom: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px; border: 1px solid rgba(0, 184, 212, 0.3); }
@@ -77,13 +81,16 @@
         
         input { width: 100%; padding: 12px; margin-top: 5px; background: rgba(255,255,255,0.1); border: 1px solid #00b8d4; border-radius: 10px; color: white; outline: none; box-sizing: border-box; }
         label { display: block; margin-top: 10px; font-size: 0.8em; color: #84ffff; font-weight: bold; }
+
+        /* Gallery Modal Styling */
+        #gallery-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); cursor: zoom-out; }
     </style>
 </head>
 <body>
 
     <div id="bubble-container"></div>
     <h2>🔱 Sea Creatures table</h2>
-    <div class="deploy-tag">● Research Station Management V3.5</div>
+    <div class="deploy-tag">● Research Station Management V3.6</div>
 
     <div class="dashboard">
         <div id="sync-timestamp" style="position: absolute; right: 0; top: -25px; font-size: 0.75em; color: #80deea; font-style: italic;">Last Sync: Never</div>
@@ -152,6 +159,14 @@
         </div>
     </div>
 
+    <div id="gallery-modal" onclick="closeGallery()">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
+            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid #00e5ff; box-shadow: 0 0 30px rgba(0,229,255,0.5);">
+            <h3 id="gallery-title" style="color: #fff; margin-top: 15px; font-size: 1.8em; text-shadow: 0 0 10px #000;"></h3>
+            <p id="gallery-sci" style="color: #84ffff; font-style: italic;"></p>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const _URL = 'https://dfuqjromqjmpeeymiejx.supabase.co'; 
@@ -164,43 +179,28 @@
             const { data: { session } } = await sb.auth.getSession();
             updateUI(session);
         }
-
-        sb.auth.onAuthStateChange((event, session) => {
-            updateUI(session);
-        });
+        sb.auth.onAuthStateChange((event, session) => updateUI(session));
 
         function updateUI(session) {
-            const loginSection = document.getElementById('login-section');
-            const authStatus = document.getElementById('auth-status');
-            const logoutBtn = document.getElementById('logout-btn');
+            const loginSection = document.getElementById('login-section'), authStatus = document.getElementById('auth-status'), logoutBtn = document.getElementById('logout-btn');
             if (session) {
-                loginSection.style.display = "none";
-                logoutBtn.style.display = "block";
-                authStatus.innerText = "✅ Authorized Admin Mode";
-                authStatus.style.color = "#00e676";
+                loginSection.style.display = "none"; logoutBtn.style.display = "block";
+                authStatus.innerText = "✅ Authorized Admin Mode"; authStatus.style.color = "#00e676";
             } else {
-                loginSection.style.display = "block";
-                logoutBtn.style.display = "none";
-                authStatus.innerText = "Status: 🌊 Viewing Mode";
-                authStatus.style.color = "#84ffff";
+                loginSection.style.display = "block"; logoutBtn.style.display = "none";
+                authStatus.innerText = "Status: 🌊 Viewing Mode"; authStatus.style.color = "#84ffff";
             }
         }
 
         async function adminSignIn() {
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
+            const email = document.getElementById('admin-email').value, password = document.getElementById('admin-password').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
             if (error) alert(error.message);
         }
-
-        async function adminSignOut() {
-            await sb.auth.signOut();
-            location.reload();
-        }
+        async function adminSignOut() { await sb.auth.signOut(); location.reload(); }
 
         // --- CORE LOGIC ---
         function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'N/A'; }
-
         async function loadCreatures() {
             const { data, error } = await sb.from('Sea Creatures').select('*');
             if (!error) { currentData = filteredData = data; renderTable(currentData); }
@@ -209,19 +209,15 @@
         function renderTable(list) {
             const body = document.getElementById('creature-table-body');
             body.innerHTML = '';
-            
-            // Update Stats
             document.getElementById('stat-total').innerText = list.length;
             document.getElementById('stat-endangered').innerText = list.filter(c => (c.status||"").toLowerCase().includes("critically endangered")).length;
             document.getElementById('stat-stable').innerText = list.filter(c => (c.status||"").toLowerCase().match(/stable|concern|safe/)).length;
 
             list.forEach(c => {
-                const status = (c.status || "").toLowerCase();
-                const isCritical = status.includes("critically endangered");
+                const isCritical = (c.status || "").toLowerCase().includes("critically endangered");
                 const rowClass = isCritical ? 'class="alert-critical"' : '';
-
                 body.innerHTML += `<tr id="row-${c.id}" ${rowClass}>
-                    <td data-label="Creature" class="col-name">${c.sea_creature}</td>
+                    <td data-label="Creature" class="col-name" onclick="openGallery('${c.sea_creature}', '${c.scientific_name}')">${c.sea_creature}</td>
                     <td data-label="Scientific" class="col-sci">${c.scientific_name}</td>
                     <td data-label="Status" class="col-sts">${c.status}</td>
                     <td data-label="Source" class="col-src"><span class="source-tag">${c.source || 'N/A'}</span></td>
@@ -234,65 +230,50 @@
             });
         }
 
-        async function uploadCSV() {
-            const file = document.getElementById('csv-file').files[0];
-            const btn = document.getElementById('csv-btn');
-            const prog = document.getElementById('progress-container');
-            const bar = document.getElementById('progress-bar');
+        // --- GALLERY FUNCTIONS ---
+        function openGallery(name, science) {
+            const modal = document.getElementById('gallery-modal'), img = document.getElementById('gallery-img'), title = document.getElementById('gallery-title'), sciText = document.getElementById('gallery-sci');
+            img.src = `https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&q=80&w=800&q=80`; // Default beautiful underwater
+            // Dynamically search Unsplash for the creature
+            fetch(`https://api.unsplash.com/search/photos?page=1&query=${name} underwater&client_id=YOUR_UNSPLASH_ACCESS_KEY`)
+                .then(res => res.json())
+                .then(data => { if(data.results.length > 0) img.src = data.results[0].urls.regular; });
             
-            if (!file) return alert("Select CSV File");
-            
-            btn.disabled = true;
-            prog.style.display = "block";
-            bar.style.width = "50%";
+            title.innerText = name; sciText.innerText = science;
+            modal.style.display = "block";
+        }
+        function closeGallery() { document.getElementById('gallery-modal').style.display = "none"; }
 
+        // --- SMART SYNC & CRUD ---
+        async function uploadCSV() {
+            const file = document.getElementById('csv-file').files[0], btn = document.getElementById('csv-btn'), prog = document.getElementById('progress-container'), bar = document.getElementById('progress-bar');
+            if (!file) return alert("Select CSV File");
+            btn.disabled = true; prog.style.display = "block"; bar.style.width = "50%";
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const rows = e.target.result.split('\n'), data = [];
                 rows.forEach(r => {
                     const cols = r.split(',');
                     if (cols[0] && cols[0].toLowerCase() !== "sea creature") {
-                        data.push({ 
-                            sea_creature: cols[0].trim(), 
-                            scientific_name: cols[1]?.trim(), 
-                            status: cols[2]?.trim(), 
-                            source: cols[3]?.trim() || 'CSV Sync' 
-                        });
+                        data.push({ sea_creature: cols[0].trim(), scientific_name: cols[1]?.trim(), status: cols[2]?.trim(), source: cols[3]?.trim() || 'CSV Sync' });
                     }
                 });
-
                 const { error } = await sb.from('Sea Creatures').upsert(data, { onConflict: 'sea_creature,scientific_name' });
-                
-                if (error) {
-                    alert("❌ Sync Failed: " + error.message);
-                } else {
-                    bar.style.width = "100%";
-                    const now = new Date();
-                    document.getElementById('sync-timestamp').innerText = `Last Sync: ${now.toLocaleTimeString()}`;
-                    alert("✅ Sync Complete!");
-                    loadCreatures();
-                }
-                
-                btn.disabled = false;
-                setTimeout(() => prog.style.display = "none", 2000);
+                if (error) alert("❌ Sync Failed: " + error.message);
+                else { bar.style.width = "100%"; document.getElementById('sync-timestamp').innerText = `Last Sync: ${new Date().toLocaleTimeString()}`; alert("✅ Sync Complete!"); loadCreatures(); }
+                btn.disabled = false; setTimeout(() => prog.style.display = "none", 2000);
             };
             reader.readAsText(file);
         }
 
         async function addNewCreature() {
-            const entry = {
-                sea_creature: document.getElementById('new-common-name').value,
-                scientific_name: document.getElementById('new-scientific-name').value,
-                status: document.getElementById('new-status').value,
-                source: document.getElementById('new-source').value
-            };
+            const entry = { sea_creature: document.getElementById('new-common-name').value, scientific_name: document.getElementById('new-scientific-name').value, status: document.getElementById('new-status').value, source: document.getElementById('new-source').value };
             const { error } = await sb.from('Sea Creatures').upsert([entry], { onConflict: 'sea_creature,scientific_name' });
             if (error) alert("🔒 Admin Access Required"); else loadCreatures();
         }
 
         function enterEdit(id) {
-            const row = document.getElementById(`row-${id}`);
-            const fields = ['name', 'sci', 'sts', 'src'];
+            const row = document.getElementById(`row-${id}`), fields = ['name', 'sci', 'sts', 'src'];
             fields.forEach(f => {
                 const selector = f === 'src' ? '.col-src span' : `.col-${f === 'name' ? 'name' : f === 'sci' ? 'sci' : 'sts'}`;
                 const el = row.querySelector(selector);
@@ -303,47 +284,21 @@
         }
 
         async function saveEdit(id) {
-            const row = document.getElementById(`row-${id}`);
-            const inputs = row.querySelectorAll('input');
-            const { error } = await sb.from('Sea Creatures').update({
-                sea_creature: inputs[0].value, scientific_name: inputs[1].value,
-                status: inputs[2].value, source: inputs[3].value
-            }).eq('id', id);
+            const row = document.getElementById(`row-${id}`), inputs = row.querySelectorAll('input');
+            const { error } = await sb.from('Sea Creatures').update({ sea_creature: inputs[0].value, scientific_name: inputs[1].value, status: inputs[2].value, source: inputs[3].value }).eq('id', id);
             if (error) alert("Access Denied"); else loadCreatures();
         }
 
-        async function deleteItem(id) {
-            if (confirm("Delete this record?")) await sb.from('Sea Creatures').delete().eq('id', id);
-            loadCreatures();
+        async function deleteItem(id) { if (confirm("Delete this record?")) await sb.from('Sea Creatures').delete().eq('id', id); loadCreatures(); }
+        function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val))); renderTable(filteredData); }
+        function sortData(col) { sortOrder = !sortOrder; filteredData.sort((a, b) => { let vA = (a[col] || "").toString().toLowerCase(), vB = (b[col] || "").toString().toLowerCase(); return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); }); renderTable(filteredData); }
+        function exportToCSV() { 
+            let csv = "Creature,Scientific,Status,Source,Date\n"; 
+            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`); 
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'registry_export.csv'; a.click(); 
         }
 
-        function filterTable() {
-            const val = document.getElementById('search-input').value.toLowerCase();
-            filteredData = currentData.filter(i => Object.values(i).some(v => v?.toString().toLowerCase().includes(val)));
-            renderTable(filteredData);
-        }
-
-        function sortData(col) {
-            sortOrder = !sortOrder;
-            filteredData.sort((a, b) => {
-                let vA = (a[col] || "").toString().toLowerCase();
-                let vB = (b[col] || "").toString().toLowerCase();
-                return sortOrder ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
-            });
-            renderTable(filteredData);
-        }
-
-        function exportToCSV() {
-            let csv = "Creature,Scientific,Status,Source,Date\n";
-            filteredData.forEach(i => csv += `"${i.sea_creature}","${i.scientific_name}","${i.status}","${i.source}","${formatDate(i.created_at)}"\n`);
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = 'aquarium_registry_v3.5.csv';
-            a.click();
-        }
-
-        checkSession();
-        loadCreatures();
+        checkSession(); createBubbles(); loadCreatures();
     </script>
 </body>
 </html>
