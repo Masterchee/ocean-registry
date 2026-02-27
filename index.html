@@ -63,8 +63,6 @@
         .coord-link { display: block; font-size: 0.7em; color: var(--glow); text-decoration: none; margin-top: 2px; opacity: 0.7; }
         
         button { padding: 8px 10px; background: var(--glow); color: #003366; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
-        
-        #gallery-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); cursor: zoom-out; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
@@ -105,14 +103,6 @@
             <input type="file" id="csv-file" accept=".csv" style="color:white; margin-bottom:10px;">
             <button onclick="uploadCSV()" style="background: var(--save); width: 100%;">📥 Sync Registry CSV</button>
             <button onclick="adminSignOut()" style="background: var(--alert); color: white; margin-top:10px; width: 100%;">🚪 Logout</button>
-        </div>
-    </div>
-
-    <div id="gallery-modal" onclick="closeGallery()">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; max-width: 600px;">
-            <img id="gallery-img" src="" style="width: 100%; border-radius: 20px; border: 3px solid var(--glow); background: #000;" onerror="this.src='https://placehold.co/600x400?text=Specimen+Visual+Pending'">
-            <h2 id="gallery-title" style="margin-top: 15px; text-shadow: 0 0 10px #000;"></h2>
-            <p style="font-size: 0.8em; opacity: 0.7;">Click anywhere to surface</p>
         </div>
     </div>
 
@@ -169,7 +159,7 @@
                     <td class="col-sts">${c.status}</td>
                     <td class="col-src">${c.source||'N/A'}</td>
                     <td class="col-act">
-                        <button onclick="openGallery('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
+                        <button onclick="viewImageDirectly('${c.sea_creature.replace(/'/g, "\\'")}')">🖼️</button>
                         ${isAdmin ? `<button onclick="deleteItem(${c.id})" style="background:var(--alert); color:white;">🗑</button>` : ''}
                     </td>
                 </tr>`;
@@ -195,11 +185,10 @@
                         popupAnchor: [0, -15]
                     });
                     
-                    // MODIFIED POPUP: The name is now a link that calls openGallery
                     const popupContent = `
-                        <b onclick="openGallery('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
+                        <b onclick="viewImageDirectly('${d.sea_creature.replace(/'/g, "\\'")}')">${d.sea_creature}</b><br>
                         coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
-                        <small>(Click name for photo)</small>
+                        <small>(Click name to view photo in new tab)</small>
                     `;
                     
                     markers[d.id] = L.marker([lat, lng], { icon: subIcon })
@@ -218,14 +207,13 @@
             }, 1600);
         }
 
-        function openGallery(name) {
-            const img = document.getElementById('gallery-img');
+        // UPDATED: Now opens the image directly in a new browser tab
+        function viewImageDirectly(name) {
             const creature = currentData.find(c => c.sea_creature === name);
-            // RELIABLE IMAGE ENGINE: Switches to LoremFlickr for keyword marine search
             const fallback = "https://loremflickr.com/600/400/" + encodeURIComponent(name) + ",underwater/all";
-            img.src = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
-            document.getElementById('gallery-title').innerText = name;
-            document.getElementById('gallery-modal').style.display = 'block'; 
+            const imageUrl = (creature && creature.image_url && creature.image_url.startsWith('http')) ? creature.image_url : fallback;
+            
+            window.open(imageUrl, '_blank');
         }
 
         async function uploadCSV() {
@@ -251,7 +239,6 @@
             }; reader.readAsText(f);
         }
 
-        function closeGallery() { document.getElementById('gallery-modal').style.display = 'none'; }
         function toggleTheme() { document.body.classList.toggle('dark-mode'); }
         function filterTable() { const val = document.getElementById('search-input').value.toLowerCase(); filteredData = currentData.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(val))); renderTable(filteredData); }
         checkSession();
